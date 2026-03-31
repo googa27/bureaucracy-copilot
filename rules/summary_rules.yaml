@@ -1,0 +1,108 @@
+# Summary Rules
+# Defines thresholds and triggers for automated summaries.
+
+weekly_hygiene_summary:
+  cadence: weekly
+  day_of_week: monday
+  time: "09:00"
+  timezone: "America/Santiago"
+  
+  sections:
+    inbox_state:
+      enabled: true
+      show_counts_by_label: true
+      highlight_action_items: true
+      
+    reimbursement_queue:
+      enabled: true
+      show_all_open_cases: true
+      highlight_overdue: true
+      overdue_threshold_days: 7
+      
+    stale_items:
+      enabled: true
+      waiting_stale_days: 7
+      submitted_stale_days: 21
+      pending_stale_days: 30
+      
+    suggested_actions:
+      enabled: true
+      max_suggestions: 5
+      priority_order: ["urgent", "high_value", "stale"]
+      
+    unsubscribe_suggestions:
+      enabled: true
+      min_emails_in_period: 5
+      min_open_rate_threshold: 0.1
+      period_days: 30
+
+monthly_finance_digest:
+  cadence: monthly
+  day_of_month: 1
+  time: "09:00"
+  timezone: "America/Santiago"
+  
+  sections:
+    summary_stats:
+      enabled: true
+      show_net: true
+      show_in_out: true
+      
+    by_category:
+      enabled: true
+      categories: ["medical", "transport", "subscription", "investment", "salary", "other"]
+      
+    reimbursements_received:
+      enabled: true
+      
+    subscription_audit:
+      enabled: true
+      flag_if_amount_changed: true
+      flag_if_unused: true
+      
+    benefits_review:
+      enabled: true
+      known_benefits:
+        - name: "BICE VIDA dental"
+          frequency: quarterly
+          estimated_value_clp: 50000
+        - name: "Sport Francés reimbursement"
+          frequency: quarterly
+          estimated_value_clp: 80000
+
+reimbursement_queue_summary:
+  cadence: on_demand
+  include_in_weekly: true
+  
+  columns:
+    - case_id
+    - service_date
+    - provider
+    - amount
+    - route
+    - status
+    - next_action
+    - follow_up_date
+
+stale_case_alerting:
+  enabled: true
+  
+  thresholds:
+    submitted_to_alert_days: 21
+    pending_to_alert_days: 30
+    new_unreviewed_days: 7
+    
+  alert_methods:
+    - calendar_event
+    - weekly_summary_section
+
+sport_frances_handoff:
+  cadence: quarterly
+  months: [3, 6, 9, 12]
+  day_of_month: 1
+  
+  content:
+    - current_quarter_expenses
+    - submission_instructions
+    - estimated_reimbursement_amount
+    - relevant_email_links
