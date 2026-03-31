@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/googa27/bureaucracy-copilot/schemas/financial_event.schema.json",
+  "title": "FinancialEvent",
+  "description": "A structured financial transaction extracted from email",
+  "type": "object",
+  "required": ["event_id", "event_date", "amount", "currency", "direction", "source_email_id"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "pattern": "^fin_[0-9]{8}_[A-Z0-9]{4}$",
+      "description": "Unique event identifier"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of the financial event"
+    },
+    "counterparty": {
+      "type": ["string", "null"],
+      "description": "The other party in the transaction (merchant, sender, recipient)"
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Transaction amount (always positive; direction indicates in/out)"
+    },
+    "currency": {
+      "type": "string",
+      "default": "CLP",
+      "description": "ISO 4217 currency code"
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["in", "out"],
+      "description": "Money coming in or going out"
+    },
+    "account_source": {
+      "type": "string",
+      "enum": ["tenpo", "bice", "bice_inversiones", "other"],
+      "description": "Which account/platform this event is from"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "payment",
+        "investment_purchase",
+        "investment_dividend",
+        "subscription",
+        "salary",
+        "receipt",
+        "reimbursement",
+        "club_dues",
+        "transport",
+        "other"
+      ],
+      "description": "Classification of the financial event"
+    },
+    "category": {
+      "type": ["string", "null"],
+      "enum": ["medical", "transport", "subscription", "investment", "salary", "food", "housing", "admin", "other", null],
+      "description": "High-level spending category"
+    },
+    "source_email_id": {
+      "type": "string",
+      "description": "Gmail message ID of the source email"
+    },
+    "has_attachment": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the source email has attachments"
+    },
+    "attachment_names": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Names of attachments in source email"
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Free-form notes"
+    },
+    "extraction_confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Confidence in extraction accuracy"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
