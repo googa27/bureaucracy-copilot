@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/googa27/bureaucracy-copilot/schemas/reminder.schema.json",
+  "title": "ReminderTask",
+  "description": "A calendar-linked reminder task",
+  "type": "object",
+  "required": ["task_id", "title", "scheduled_at", "status"],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^task_[0-9]{8}_[A-Z0-9]{4}$"
+    },
+    "related_object_type": {
+      "type": ["string", "null"],
+      "enum": ["claim", "finance_review", "job", "admin", "sport_frances", "quarterly", null]
+    },
+    "related_object_id": {
+      "type": ["string", "null"],
+      "description": "ID of the related MedicalCase, FinancialEvent, or other object"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "description": {
+      "type": ["string", "null"]
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "google_event_id": {
+      "type": ["string", "null"],
+      "description": "Google Calendar event ID if synced"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["scheduled", "done", "dismissed", "rescheduled"]
+    },
+    "recurrence": {
+      "type": ["string", "null"],
+      "description": "RRULE string for recurring events (e.g. FREQ=WEEKLY;BYDAY=MO)"
+    },
+    "notes": {
+      "type": ["string", "null"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
