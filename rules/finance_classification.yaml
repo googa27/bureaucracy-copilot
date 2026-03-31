@@ -1,0 +1,147 @@
+# Finance Classification Rules
+# Rules for classifying financial emails and extracting event data.
+
+classification_rules:
+
+  # ── TENPO ─────────────────────────────────────────────────────────────────────
+
+  - source: tenpo
+    patterns:
+      - sender_domain: tenpo.cl
+      - subject_keyword: "tenpo"
+    event_type: bank_transfer
+    account_source: tenpo
+    extraction:
+      amount_regex: "\\$([\\d,\\.]+)|CLP ([\\d,\\.]+)|(\\d{1,3}(?:[.,]\\d{3})*) pesos"
+      direction_signals:
+        in: ["recibiste", "recibido", "ingreso", "te enviaron"]
+        out: ["enviaste", "pagaste", "transferiste", "compra"]
+      counterparty_field: subject
+    archive: true
+    label: BC/Records/Finance/Transfer
+
+  # ── BICE BANK ─────────────────────────────────────────────────────────────────
+
+  - source: bice_bank
+    patterns:
+      - sender_domain: bice.cl
+    event_type: bank_transfer
+    account_source: bice
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|CLP ([\\d.,]+)"
+      direction_signals:
+        in: ["abono", "depósito", "recibió"]
+        out: ["cargo", "débito", "pago", "transferencia"]
+    archive: true
+    label: BC/Records/Finance/Bank
+
+  # ── BICE INVERSIONES ──────────────────────────────────────────────────────────
+
+  - source: bice_inversiones
+    patterns:
+      - sender_domain: biceinversiones.cl
+    event_type: investment_purchase
+    account_source: bice_inversiones
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|USD ([\\d.,]+)|EUR ([\\d.,]+)"
+      direction_signals:
+        in: ["distribución", "dividendo", "rescate"]
+        out: ["suscripción", "compra", "inversión"]
+    archive: true
+    label: BC/Records/Finance/Investment
+
+  # ── SUBSCRIPTIONS ─────────────────────────────────────────────────────────────
+
+  - source: spotify
+    patterns:
+      - sender_domain: spotify.com
+      - subject_keyword: "spotify"
+    event_type: subscription
+    account_source: other
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|CLP ([\\d.,]+)"
+      direction: out
+      counterparty: Spotify
+    archive: true
+    label: BC/Records/Finance/Subscription
+
+  - source: netflix
+    patterns:
+      - sender_domain: netflix.com
+    event_type: subscription
+    account_source: other
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|CLP ([\\d.,]+)"
+      direction: out
+      counterparty: Netflix
+    archive: true
+    label: BC/Records/Finance/Subscription
+
+  # ── RECEIPTS ──────────────────────────────────────────────────────────────────
+
+  - source: mercadopago
+    patterns:
+      - sender_domain: mercadopago.com
+    event_type: payment
+    account_source: other
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|CLP ([\\d.,]+)"
+      direction: out
+    archive: true
+    label: BC/Records/Finance/Receipt
+
+  # ── TRANSPORT ─────────────────────────────────────────────────────────────────
+
+  - source: uber
+    patterns:
+      - sender_domain: uber.com
+      - subject_keyword: "uber"
+    event_type: payment
+    account_source: other
+    category: transport
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|CLP ([\\d.,]+)"
+      direction: out
+      counterparty: Uber
+    archive: true
+    label: BC/Records/Finance/Transport
+
+  - source: cabify
+    patterns:
+      - sender_domain: cabify.com
+    event_type: payment
+    account_source: other
+    category: transport
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|CLP ([\\d.,]+)"
+      direction: out
+      counterparty: Cabify
+    archive: true
+    label: BC/Records/Finance/Transport
+
+  # ── SALARY / PAYROLL ──────────────────────────────────────────────────────────
+
+  - source: previred
+    patterns:
+      - sender_domain: previred.com
+      - subject_keyword: "liquidación|liquidacion|sueldo|remuneración"
+    event_type: salary
+    account_source: other
+    category: salary
+    extraction:
+      amount_regex: "\\$([\\d.,]+)|CLP ([\\d.,]+)"
+      direction: in
+    archive: true
+    label: BC/Records/Career/Payslip
+
+amount_normalization:
+  description: Normalize extracted amounts
+  remove_chars: [".", ",", "$", "CLP", " "]
+  decimal_separator: ","
+  thousands_separator: "."
+
+confidence_thresholds:
+  high: 0.85
+  medium: 0.65
+  low: 0.40
+  min_to_store: 0.40
