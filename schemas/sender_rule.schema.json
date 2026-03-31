@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/googa27/bureaucracy-copilot/schemas/sender_rule.schema.json",
+  "title": "SenderRule",
+  "description": "A rule mapping email sender patterns to classification labels",
+  "type": "object",
+  "required": ["rule_id", "pattern_type", "pattern", "labels"],
+  "properties": {
+    "rule_id": {
+      "type": "string",
+      "description": "Unique rule identifier"
+    },
+    "pattern_type": {
+      "type": "string",
+      "enum": ["domain", "email", "subject_keyword", "sender_name"],
+      "description": "Type of pattern to match"
+    },
+    "pattern": {
+      "type": "string",
+      "description": "The pattern to match (domain, email address, keyword, or name substring)"
+    },
+    "labels": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Gmail label paths to apply (e.g. BC/Records/Medical/Invoice)"
+    },
+    "classification": {
+      "type": ["string", "null"],
+      "enum": ["Action", "Pipeline", "Records", "Waiting", "Feeds", null],
+      "description": "Top-level classification to assign"
+    },
+    "archive": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to archive immediately after labeling"
+    },
+    "confidence_boost": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.9,
+      "description": "Confidence level when this rule matches"
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Human-readable explanation of the rule"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this rule is enabled"
+    }
+  },
+  "additionalProperties": false
+}
