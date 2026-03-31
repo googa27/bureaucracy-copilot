@@ -1,0 +1,113 @@
+# Medical Route Rules
+# Defines how to infer the insurer route for a medical case.
+# Rules are evaluated in priority order; first match wins (unless multiple routes detected).
+
+routes:
+
+  # ── ESENCIAL SIGNALS ──────────────────────────────────────────────────────────
+
+  - signal: esencial_sender
+    description: Email from Esencial domain
+    pattern_type: sender_domain
+    pattern: "esencial.cl|esencialapp.cl"
+    route: esencial
+    confidence: 0.9
+
+  - signal: esencial_keyword
+    description: Esencial mentioned in subject or body
+    pattern_type: keyword
+    pattern: "esencial|isapre"
+    route: esencial
+    confidence: 0.7
+
+  - signal: bono_keyword
+    description: 'Bono' or 'bonificación' (isapre reimbursement terms)
+    pattern_type: keyword
+    pattern: "bono|bonificación|bonificacion"
+    route: esencial
+    confidence: 0.6
+
+  # ── BICE VIDA SIGNALS ─────────────────────────────────────────────────────────
+
+  - signal: bicevida_sender
+    description: Email from BICE VIDA domain
+    pattern_type: sender_domain
+    pattern: "bicevida.cl|bicevidavida.cl"
+    route: bicevida
+    confidence: 0.9
+
+  - signal: bicevida_keyword
+    description: BICE VIDA mentioned in subject
+    pattern_type: keyword
+    pattern: "bice vida|bicevida|seguro complementario"
+    route: bicevida
+    confidence: 0.8
+
+  - signal: complementario_keyword
+    description: Complementary insurance keyword
+    pattern_type: keyword
+    pattern: "complementario|complementaria"
+    route: bicevida
+    confidence: 0.6
+
+  # ── ALEMANA SIGNALS ───────────────────────────────────────────────────────────
+
+  - signal: alemana_sender
+    description: Email from Clínica Alemana domain
+    pattern_type: sender_domain
+    pattern: "clinicaalemana.cl|alemana.cl"
+    route: alemana
+    confidence: 0.85
+
+  - signal: alemana_keyword
+    description: Clínica Alemana mentioned in subject
+    pattern_type: keyword
+    pattern: "clínica alemana|clinica alemana|alemana"
+    route: alemana
+    confidence: 0.7
+
+  # ── COMBINED ROUTE LOGIC ──────────────────────────────────────────────────────
+
+combined_route:
+  description: >
+    If both esencial and bicevida signals are present in the same case,
+    infer combined route. Combined means: submit to Esencial first, then
+    use Esencial confirmation to submit to BICE VIDA.
+  trigger: both_esencial_and_bicevida_signals
+  required_docs_additional:
+    - esencial_confirmation
+
+  # ── EXPENSE TYPE MODIFIERS ────────────────────────────────────────────────────
+
+expense_type_modifiers:
+
+  - expense_type: dental
+    default_route: bicevida
+    notes: Dental usually not covered by isapre; complementary may cover
+
+  - expense_type: mental_health
+    default_route: combined
+    notes: Check plan; isapre covers partial, complementary may cover remainder
+
+  - expense_type: medication
+    required_docs:
+      - prescription
+    notes: Always requires prescription for any reimbursement route
+
+  - expense_type: lab
+    default_route: esencial
+    notes: Most labs are covered by isapre; check if in-network
+
+  - expense_type: consultation
+    default_route: combined
+    notes: Specialist consultations often benefit from combined route
+
+  # ── FALLBACK ──────────────────────────────────────────────────────────────────
+
+fallback:
+  route: unknown
+  confidence: 0.0
+  action: manual_review
+  notes: >
+    When no signals match, mark as unknown and flag for manual review.
+    Do not attempt to route without human confirmation.
