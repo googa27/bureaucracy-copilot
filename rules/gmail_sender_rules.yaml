@@ -1,0 +1,232 @@
+# Gmail Sender Rules
+# Format: list of rules. Each rule has pattern_type, pattern, labels, classification, archive.
+# See schemas/sender_rule.schema.json for full schema.
+
+rules:
+
+  # ── MEDICAL / INSURANCE ──────────────────────────────────────────────────────
+
+  - rule_id: esencial_01
+    pattern_type: domain
+    pattern: esencial.cl
+    labels:
+      - BC/Records/Medical/Insurance
+    classification: Records
+    archive: true
+    notes: Esencial isapre communications
+
+  - rule_id: esencial_02
+    pattern_type: domain
+    pattern: esencialapp.cl
+    labels:
+      - BC/Records/Medical/Insurance
+    classification: Records
+    archive: true
+    notes: Esencial app notifications
+
+  - rule_id: bicevida_01
+    pattern_type: domain
+    pattern: bicevida.cl
+    labels:
+      - BC/Records/Medical/Insurance
+    classification: Records
+    archive: true
+    notes: BICE VIDA complementary insurance
+
+  - rule_id: bicevida_02
+    pattern_type: domain
+    pattern: bicevidavida.cl
+    labels:
+      - BC/Records/Medical/Insurance
+    classification: Records
+    archive: true
+
+  - rule_id: alemana_01
+    pattern_type: domain
+    pattern: clinicaalemana.cl
+    labels:
+      - BC/Records/Medical/Appointment
+    classification: Records
+    archive: true
+    notes: Clínica Alemana appointment confirmations and billing
+
+  - rule_id: alemana_02
+    pattern_type: domain
+    pattern: alemana.cl
+    labels:
+      - BC/Records/Medical/Appointment
+    classification: Records
+    archive: true
+
+  - rule_id: integramedica_01
+    pattern_type: domain
+    pattern: integramedica.cl
+    labels:
+      - BC/Records/Medical/Appointment
+    classification: Records
+    archive: true
+
+  - rule_id: bice_seguros_01
+    pattern_type: domain
+    pattern: biceseguros.cl
+    labels:
+      - BC/Records/Medical/Insurance
+    classification: Records
+    archive: true
+
+  # ── FINANCE / BANKING ────────────────────────────────────────────────────────
+
+  - rule_id: tenpo_01
+    pattern_type: domain
+    pattern: tenpo.cl
+    labels:
+      - BC/Records/Finance/Transfer
+    classification: Records
+    archive: true
+    notes: Tenpo digital wallet transfers and payments
+
+  - rule_id: bice_bank_01
+    pattern_type: domain
+    pattern: bice.cl
+    labels:
+      - BC/Records/Finance/Bank
+    classification: Records
+    archive: true
+    notes: BICE bank statements and notifications
+
+  - rule_id: bice_inversiones_01
+    pattern_type: domain
+    pattern: biceinversiones.cl
+    labels:
+      - BC/Records/Finance/Investment
+    classification: Records
+    archive: true
+    notes: BICE Inversiones investment confirmations
+
+  - rule_id: mercadopago_01
+    pattern_type: domain
+    pattern: mercadopago.com
+    labels:
+      - BC/Records/Finance/Receipt
+    classification: Records
+    archive: true
+
+  - rule_id: transbank_01
+    pattern_type: domain
+    pattern: transbank.cl
+    labels:
+      - BC/Records/Finance/Receipt
+    classification: Records
+    archive: true
+
+  # ── GOVERNMENT / ADMIN ───────────────────────────────────────────────────────
+
+  - rule_id: sii_01
+    pattern_type: domain
+    pattern: sii.cl
+    labels:
+      - BC/Records/Admin/Government
+    classification: Records
+    archive: true
+    notes: Chilean tax authority (SII) notifications
+
+  - rule_id: previred_01
+    pattern_type: domain
+    pattern: previred.com
+    labels:
+      - BC/Records/Finance/Bank
+      - BC/Records/Career/Payslip
+    classification: Records
+    archive: true
+    notes: Payroll / pension notifications
+
+  - rule_id: afp_01
+    pattern_type: subject_keyword
+    pattern: "AFP"
+    labels:
+      - BC/Records/Finance/Bank
+    classification: Records
+    archive: true
+
+  # ── CAREER / JOBS ────────────────────────────────────────────────────────────
+
+  - rule_id: linkedin_01
+    pattern_type: domain
+    pattern: linkedin.com
+    labels:
+      - BC/Pipeline/Jobs/Recruiter
+    classification: Pipeline
+    archive: false
+    notes: LinkedIn recruiter and job notifications
+
+  - rule_id: greenhouse_01
+    pattern_type: domain
+    pattern: greenhouse.io
+    labels:
+      - BC/Pipeline/Jobs/Application
+    classification: Pipeline
+    archive: false
+    notes: Greenhouse ATS (application tracking)
+
+  - rule_id: lever_01
+    pattern_type: domain
+    pattern: lever.co
+    labels:
+      - BC/Pipeline/Jobs/Application
+    classification: Pipeline
+    archive: false
+
+  - rule_id: workday_01
+    pattern_type: domain
+    pattern: workday.com
+    labels:
+      - BC/Pipeline/Jobs/Application
+    classification: Pipeline
+    archive: false
+
+  # ── SUBSCRIPTIONS / FEEDS ────────────────────────────────────────────────────
+
+  - rule_id: spotify_01
+    pattern_type: domain
+    pattern: spotify.com
+    labels:
+      - BC/Records/Finance/Subscription
+      - BC/Feeds
+    classification: Feeds
+    archive: true
+
+  - rule_id: netflix_01
+    pattern_type: domain
+    pattern: netflix.com
+    labels:
+      - BC/Records/Finance/Subscription
+      - BC/Feeds
+    classification: Feeds
+    archive: true
+
+  - rule_id: github_01
+    pattern_type: domain
+    pattern: github.com
+    labels:
+      - BC/Records/Finance/Subscription
+    classification: Records
+    archive: true
+    notes: GitHub billing notifications only; other GitHub emails handled separately
+
+  # ── TRANSPORT ────────────────────────────────────────────────────────────────
+
+  - rule_id: uber_01
+    pattern_type: domain
+    pattern: uber.com
+    labels:
+      - BC/Records/Finance/Transport
+    classification: Records
+    archive: true
+
+  - rule_id: cabify_01
+    pattern_type: domain
+    pattern: cabify.com
+    labels:
+      - BC/Records/Finance/Transport
+    classification: Records
+    archive: true
