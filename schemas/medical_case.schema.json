@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/googa27/bureaucracy-copilot/schemas/medical_case.schema.json",
+  "title": "MedicalCase",
+  "description": "A medical reimbursement case",
+  "type": "object",
+  "required": ["case_id", "status", "route", "documents", "source_emails"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "pattern": "^case_[0-9]{8}_[A-Z0-9]{4}$",
+      "description": "Unique case identifier"
+    },
+    "service_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date the medical service was provided"
+    },
+    "provider": {
+      "type": ["string", "null"],
+      "description": "Medical provider name (clinic, pharmacy, lab)"
+    },
+    "expense_type": {
+      "type": "string",
+      "enum": ["consultation", "lab", "medication", "hospitalization", "dental", "mental_health", "imaging", "other"],
+      "description": "Type of medical expense"
+    },
+    "amount": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Amount in local currency"
+    },
+    "currency": {
+      "type": "string",
+      "default": "CLP",
+      "description": "Currency code"
+    },
+    "route": {
+      "type": "string",
+      "enum": ["esencial", "bicevida", "alemana", "combined", "unknown"],
+      "description": "Inferred reimbursement route"
+    },
+    "route_confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Confidence in route inference [0,1]"
+    },
+    "documents": {
+      "type": "object",
+      "description": "Document checklist",
+      "properties": {
+        "invoice": { "type": "boolean", "default": false },
+        "reimbursement_form": { "type": "boolean", "default": false },
+        "prescription": { "type": "boolean", "default": false },
+        "payment_proof": { "type": "boolean", "default": false },
+        "esencial_confirmation": { "type": "boolean", "default": false },
+        "additional_support": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "string",
+      "enum": ["new", "missing_docs", "ready", "submitted", "pending", "reimbursed", "rejected"],
+      "description": "Case status"
+    },
+    "reimbursed_amount": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Amount actually reimbursed"
+    },
+    "source_emails": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Gmail message IDs of source emails"
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Free-form notes"
+    },
+    "next_action": {
+      "type": ["string", "null"],
+      "description": "Next action description"
+    },
+    "follow_up_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date for follow-up reminder"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
