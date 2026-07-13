@@ -1,11 +1,21 @@
 """
 draft_generator.py -- Draft follow-up emails for pending reimbursement cases.
 """
+from __future__ import annotations
+
+import base64
+import json
+from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Optional
+
 import anthropic
 
+from src.governance.executor import MutationGuard
+from src.governance.types import MutationProposal, MutationResult
+
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "draft_followup.md"
+GMAIL_COMPOSE_SCOPE = "https://www.googleapis.com/auth/gmail.compose"
 
 
 def build_followup_context(case: dict) -> str:
@@ -41,7 +51,6 @@ def draft_followup_email(
 
     response = message.content[0].text.strip()
 
-    import json
     try:
         return json.loads(response)
     except Exception:
@@ -57,11 +66,10 @@ def create_gmail_draft(
     service,
     draft_data: dict,
     thread_id: Optional[str] = None,
-) -> dict:
-    """Create a Gmail draft from draft data."""
-    import base64
-    from email.mime.text import MIMEText
-
+    *,
+    guard: MutationGuard,
+) -> MutationResult:
+    """Create a Gmail draft through MutationGuard at the adapter boundary."""
     msg = MIMEText(draft_data.get("body", ""), "plain", "utf-8")
     msg["Subject"] = draft_data.get("subject", "")
     msg["To"] = draft_data.get("to", "")
@@ -71,4 +79,20 @@ def create_gmail_draft(
     if thread_id:
         body["message"]["threadId"] = thread_id
 
-    return service.users().drafts().create(userId="me", body=body).execute()
+    proposal = MutationProposal(
+        action="gmail.create_draft",
+        scope="gmail.compose",
+        description="Create Gmail draft for private reimbursement follow-up",
+        payload={
+            "subject": draft_data.get("subject"),
+            "to": draft_data.get("to"),
+            "body": draft_data.get("body"),
+            "thread_id": thread_id,
+        },
+        required_scopes=(GMAIL_COMPOSE_SCOPE,),
+        classification="private",
+    )
+    return guard.execute(
+        proposal,
+        lambda: service.users().drafts().create(userId="me", body=body).execute(),
+    )

@@ -10,10 +10,18 @@
   },
   "architecture": {
     "style": "evolutionary, contract-first, repository-specific",
-    "layers": [],
+    "layers": [
+      "source ingestion adapters with least requested OAuth scopes",
+      "classification/extraction services",
+      "governance dry-run, redaction, approval, mutation guard, and audit layer",
+      "domain outputs: medical cases, finance events, summaries, calendar proposals"
+    ],
     "import_boundaries": {
       "authority": "repository-specific existing gates plus this contract",
-      "forbidden": [],
+      "forbidden": [
+        "classification/extraction code must not call Gmail/Calendar mutation adapters directly; use src.governance.executor.MutationGuard",
+        "audit/notebook outputs must pass through src.governance.redaction before display or persistence"
+      ],
       "cycle_policy": "acyclic runtime layers unless an exact exception is recorded"
     },
     "public_api_paths": [
@@ -24,7 +32,8 @@
       "src/medical",
       "src/outputs",
       "src/summaries",
-      "src/utils"
+      "src/utils",
+      "src/governance"
     ],
     "extension_points": [
       "typed public APIs",
@@ -53,7 +62,8 @@
       "src/medical/.gitkeep",
       "src/outputs/.gitkeep",
       "src/summaries/.gitkeep",
-      "src/utils/.gitkeep"
+      "src/utils/.gitkeep",
+      "src/governance/.gitkeep"
     ],
     "future_rule": "Any new Python package uses a src layout unless an evidence-backed exception is approved."
   },
@@ -68,7 +78,13 @@
       {
         "capability": "existing runtime stack",
         "selected": [
-          "no stable runtime manifest detected"
+          "google-api-python-client",
+          "google-auth-oauthlib",
+          "anthropic",
+          "pyyaml",
+          "jsonschema",
+          "pytest",
+          "ruff"
         ],
         "alternatives": [
           "custom reimplementation"
@@ -90,6 +106,21 @@
         "evidence": "docs/ARCHITECTURE.md",
         "adapter_boundary": "scripts/check_portfolio_architecture.py",
         "custom_code_reason": "narrow repository-specific fitness function not supplied by a maintained generic package"
+      },
+      {
+        "capability": "privacy-first mutation governance",
+        "selected": [
+          "Python standard-library dataclasses/json/pathlib/re",
+          "Google least-scope OAuth constants"
+        ],
+        "alternatives": [
+          "direct Gmail/Calendar mutation in classifiers",
+          "broad calendar/gmail scopes by default",
+          "unredacted audit logs"
+        ],
+        "evidence": "src/governance/* and tests/unit/test_governance_controls.py",
+        "adapter_boundary": "src.governance.executor.MutationGuard wraps all external mutation callables",
+        "custom_code_reason": "repo-specific approval/audit envelope around personal Gmail/Calendar side effects; no leaked-secret claim is made"
       }
     ]
   },
@@ -98,7 +129,7 @@
       "primary_agent": "Hermes Agent",
       "context_file": "AGENTS.md",
       "interaction": "AGENTS + deterministic admin CLI/dry-run/capabilities; no broad MCP until scopes and mutation approval are proven.",
-      "capability_discovery": "AGENTS.md plus the architecture checker is the current discovery surface; add a deterministic CLI/capability manifest before new maintained runtime behavior.",
+      "capability_discovery": "AGENTS.md plus CLI flags --approve-mutations, --approved-by, --approval-reason, and --audit-log. Default classify mode is dry-run and prints/audits redacted mutation proposals.",
       "skills": "Use/update a repo or class-level Hermes skill for recurring non-trivial workflows",
       "plugin_mcp_policy": "deferred unless stable interfaces and measured multi-client/tool interoperability justify it",
       "declared_entrypoints": [],
@@ -121,7 +152,8 @@
         "src/medical",
         "src/outputs",
         "src/summaries",
-        "src/utils"
+        "src/utils",
+        "src/governance"
       ],
       "notebook_policy": "deterministic public-synthetic notebook/example for active libraries; explicit inapplicable/revival decision otherwise",
       "dunder_policy": "Only documented lawful Python/NumPy/IPython protocols with algebraic/parity tests; named methods for policy, effects, diagnostics, I/O, or ambiguity",
@@ -156,7 +188,7 @@
   },
   "data": {
     "consumes_data": true,
-    "architecture": "Private local data custody, explicit classification/retention/redaction, source -> validated records -> governed outputs.",
+    "architecture": "Private local data custody with dry-run-first mutation proposals, redacted audit logs, explicit human approval, least requested Google scopes, and source -> validated records -> governed outputs.",
     "required_controls": [
       "source registry",
       "typed contracts",
@@ -166,7 +198,12 @@
       "freshness/vintage/effective time",
       "content identity",
       "replay",
-      "validation"
+      "validation",
+      "redaction",
+      "dry-run by default",
+      "human approval before mutation",
+      "least-scope OAuth",
+      "append-only audit"
     ],
     "core_repositories": {
       "PDP": "Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP.",
@@ -174,10 +211,11 @@
       "ui_and_artifacts": "Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP."
     },
     "source_registry_plan": [
-      "user-authorized Google Workspace APIs",
+      "user-authorized Gmail readonly by default; Gmail modify only with approval",
+      "Google Calendar events scope only for approved calendar mutations",
       "local user-provided documents; private by default"
     ],
-    "flow": "source registry -> typed acquisition -> immutable Bronze -> canonical Silver -> curated Gold/features -> formulation/model -> governed output -> read-only UI/API/notebook",
+    "flow": "source registry -> typed acquisition -> classification/extraction -> redacted mutation proposal -> human approval gate -> audited side effect or local governed output",
     "storage_and_replay": "Immutable raw/content-addressed inputs; canonical typed products; idempotent replay by source identity and effective/vintage time where applicable.",
     "quality_and_lineage": "Validate schema, grain, units, classification, lineage, freshness, licence, and content identity before consumption; fail closed on missing evidence."
   },

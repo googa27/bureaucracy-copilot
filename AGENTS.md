@@ -47,7 +47,9 @@ For data-consuming work, design `source registry -> typed acquisition -> immutab
 - `ui_and_artifacts` owns reusable audience-aware rendering and artifact QA.
 - Consume stable public contracts/CLIs, not repository internals. Keep canonical names theoretical/general rather than deal/product-specific.
 
-Repository posture: Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP. Data posture: Private local data custody, explicit classification/retention/redaction, source -> validated records -> governed outputs.
+Repository posture: Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP. Data posture: Private local data custody with dry-run-first mutation proposals, redacted audit logs, explicit human approval, least requested Google scopes, and source -> validated records -> governed outputs.
+
+Mutation architecture: classifiers/extractors propose Gmail/Calendar changes; `src.governance.executor.MutationGuard` records redacted audit events and executes only when `--approve-mutations`, `--approved-by`, and `--approval-reason` are supplied. Do not claim or imply leaked secrets; treat this as preventive privacy architecture.
 
 ### Exact commands
 

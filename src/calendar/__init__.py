@@ -1,1 +1,1 @@
-placeholder
+"""Calendar adapters."""

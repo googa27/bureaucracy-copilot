@@ -1,18 +1,19 @@
 """
 gmail_reader.py — Fetch and normalize Gmail messages via the Gmail API.
 """
+from __future__ import annotations
+
 import base64
-import json
-from datetime import datetime
-from typing import Optional
-from googleapiclient.discovery import build
+
 from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 
+from src.governance.executor import MutationGuard
+from src.governance.types import MutationProposal, MutationResult
 
-SCOPES = [
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.modify",
-]
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+MUTATION_SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
+GMAIL_MODIFY_SCOPE = "https://www.googleapis.com/auth/gmail.modify"
 
 
 def build_service(credentials: Credentials):
@@ -81,37 +82,90 @@ def _extract_body(payload: dict) -> str:
     return ""
 
 
-def apply_label(service, message_id: str, label_ids: list[str]) -> dict:
-    """Apply Gmail labels to a message."""
-    return service.users().messages().modify(
-        userId="me",
-        id=message_id,
-        body={"addLabelIds": label_ids},
-    ).execute()
-
-
-def archive_message(service, message_id: str) -> dict:
-    """Remove INBOX label to archive a message."""
-    return service.users().messages().modify(
-        userId="me",
-        id=message_id,
-        body={"removeLabelIds": ["INBOX"]},
-    ).execute()
-
-
-def get_or_create_label(service, name: str) -> str:
-    """Return label ID for a given label name, creating it if missing."""
+def get_or_create_label(service, name: str, *, guard: MutationGuard) -> str | None:
+    """Return a label ID, creating a missing label only through MutationGuard."""
     labels = service.users().labels().list(userId="me").execute().get("labels", [])
     for label in labels:
         if label["name"] == name:
             return label["id"]
 
-    created = service.users().labels().create(
-        userId="me",
-        body={
-            "name": name,
-            "labelListVisibility": "labelShow",
-            "messageListVisibility": "show",
+    proposal = MutationProposal(
+        action="gmail.create_label",
+        scope="gmail.modify",
+        description="Create Gmail classification label",
+        payload={"label_name": name},
+        required_scopes=(GMAIL_MODIFY_SCOPE,),
+        classification="private",
+    )
+
+    def create_label() -> dict:
+        return service.users().labels().create(
+            userId="me",
+            body={
+                "name": name,
+                "labelListVisibility": "labelShow",
+                "messageListVisibility": "show",
+            },
+        ).execute()
+
+    result = guard.execute(proposal, create_label)
+    return result.applied_reference if result.status == "applied" else None
+
+
+def apply_label(
+    service,
+    message_id: str,
+    label_ids: list[str],
+    *,
+    guard: MutationGuard,
+    subject: str | None = None,
+    label_name: str | None = None,
+) -> MutationResult:
+    """Apply Gmail labels through MutationGuard at the adapter boundary."""
+    proposal = MutationProposal(
+        action="gmail.apply_label",
+        scope="gmail.modify",
+        description="Apply Gmail classification label to one message",
+        payload={
+            "message_id": message_id,
+            "subject": subject,
+            "label": label_name,
+            "label_ids": label_ids,
         },
-    ).execute()
-    return created["id"]
+        required_scopes=(GMAIL_MODIFY_SCOPE,),
+        classification="private",
+    )
+    return guard.execute(
+        proposal,
+        lambda: service.users().messages().modify(
+            userId="me",
+            id=message_id,
+            body={"addLabelIds": label_ids},
+        ).execute(),
+    )
+
+
+def archive_message(
+    service,
+    message_id: str,
+    *,
+    guard: MutationGuard,
+    subject: str | None = None,
+) -> MutationResult:
+    """Remove INBOX label through MutationGuard at the adapter boundary."""
+    proposal = MutationProposal(
+        action="gmail.archive_message",
+        scope="gmail.modify",
+        description="Remove INBOX label after classification",
+        payload={"message_id": message_id, "subject": subject},
+        required_scopes=(GMAIL_MODIFY_SCOPE,),
+        classification="private",
+    )
+    return guard.execute(
+        proposal,
+        lambda: service.users().messages().modify(
+            userId="me",
+            id=message_id,
+            body={"removeLabelIds": ["INBOX"]},
+        ).execute(),
+    )

@@ -33,7 +33,8 @@ Source of truth: `docs/ARCHITECTURE.yaml`. Tracking: [Project #24](https://githu
 - Human/notebook: Typed service facade and notebook-safe redacted DTOs; no side-effectful dunders.
 - Planned Python protocols: Immutable document/workflow references: __repr__ and value equality only.; Resource clients use context managers only for real lifecycle ownership.; Network, approval, submission, and mutation remain named methods.
 - Core posture: Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP.
-- Data posture: Private local data custody, explicit classification/retention/redaction, source -> validated records -> governed outputs.
+- Data posture: Private local data custody with dry-run-first mutation proposals, redacted audit logs, explicit human approval, least requested Google scopes, and source -> validated records -> governed outputs.
+- Preventive mutation architecture: Gmail/Calendar side effects are represented as `MutationProposal` records, redacted, audited, and applied only through `MutationGuard` after explicit approval flags. This is a privacy-by-design control, not evidence of any prior leak.
 
 ### Extension and exception discipline
 
