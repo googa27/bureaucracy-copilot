@@ -8,8 +8,6 @@ import yaml
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-import anthropic
-
 RULES_PATH = Path(__file__).parent.parent.parent / "rules" / "finance_classification.yaml"
 EVENTS_DIR = Path("~/.bureaucracy_copilot/finance_events").expanduser()
 

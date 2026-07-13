@@ -1,10 +1,18 @@
 """
 reminder_creator.py -- Create Google Calendar events for medical follow-ups and review blocks.
 """
-from datetime import datetime, timedelta, date
-from typing import Optional
-from googleapiclient.discovery import build
+from __future__ import annotations
+
+from datetime import date, timedelta
+
 from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+
+from src.governance.executor import MutationGuard
+from src.governance.types import MutationProposal, MutationResult
+
+CALENDAR_EVENTS_SCOPE = "https://www.googleapis.com/auth/calendar.events"
+SCOPES = [CALENDAR_EVENTS_SCOPE]
 
 
 def build_service(credentials: Credentials):
@@ -17,8 +25,10 @@ def create_followup_event(
     case: dict,
     days_from_now: int = 14,
     calendar_id: str = "primary",
-) -> dict:
-    """Create a calendar follow-up event for an open medical case."""
+    *,
+    guard: MutationGuard,
+) -> MutationResult:
+    """Create a calendar follow-up event through MutationGuard."""
     follow_date = date.today() + timedelta(days=days_from_now)
     insurer = case.get("insurer", "Insurer")
     provider = case.get("provider", "Provider")
@@ -40,15 +50,17 @@ def create_followup_event(
         "reminders": {"useDefault": False, "overrides": [{"method": "popup", "minutes": 480}]},
         "colorId": "6",
     }
-    return service.events().insert(calendarId=calendar_id, body=event).execute()
+    return _insert_event(service, calendar_id, event, guard=guard, action="calendar.create_followup_event")
 
 
 def create_weekly_review_block(
     service,
     review_date=None,
     calendar_id: str = "primary",
-) -> dict:
-    """Create a weekly inbox hygiene review block."""
+    *,
+    guard: MutationGuard,
+) -> MutationResult:
+    """Create a weekly inbox hygiene review block through MutationGuard."""
     if review_date is None:
         today = date.today()
         days_ahead = 6 - today.weekday()
@@ -65,15 +77,17 @@ def create_weekly_review_block(
         "reminders": {"useDefault": False, "overrides": [{"method": "popup", "minutes": 30}]},
         "colorId": "2",
     }
-    return service.events().insert(calendarId=calendar_id, body=event).execute()
+    return _insert_event(service, calendar_id, event, guard=guard, action="calendar.create_weekly_review_block")
 
 
 def create_quarterly_handoff(
     service,
     quarter_end,
     calendar_id: str = "primary",
-) -> dict:
-    """Create a quarterly review/handoff event."""
+    *,
+    guard: MutationGuard,
+) -> MutationResult:
+    """Create a quarterly review/handoff event through MutationGuard."""
     event = {
         "summary": "Quarterly Bureaucracy Handoff",
         "description": "Close resolved cases, quarterly finance summary, review benefit utilization.",
@@ -88,4 +102,32 @@ def create_quarterly_handoff(
         },
         "colorId": "9",
     }
-    return service.events().insert(calendarId=calendar_id, body=event).execute()
+    return _insert_event(service, calendar_id, event, guard=guard, action="calendar.create_quarterly_handoff")
+
+
+def _insert_event(
+    service,
+    calendar_id: str,
+    event: dict,
+    *,
+    guard: MutationGuard,
+    action: str,
+) -> MutationResult:
+    proposal = MutationProposal(
+        action=action,
+        scope="calendar.events",
+        description="Insert private planner event into Google Calendar",
+        payload={
+            "calendar_id": calendar_id,
+            "summary": event.get("summary"),
+            "description": event.get("description"),
+            "start": event.get("start"),
+            "end": event.get("end"),
+        },
+        required_scopes=(CALENDAR_EVENTS_SCOPE,),
+        classification="private",
+    )
+    return guard.execute(
+        proposal,
+        lambda: service.events().insert(calendarId=calendar_id, body=event).execute(),
+    )

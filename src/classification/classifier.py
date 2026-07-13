@@ -1,7 +1,6 @@
 """
 classifier.py — Classify Gmail messages using sender rules and LLM fallback.
 """
-import re
 import yaml
 from pathlib import Path
 from typing import Optional

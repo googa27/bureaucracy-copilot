@@ -1,1 +1,1 @@
-placeholder
+"""Bureaucracy Copilot package."""
