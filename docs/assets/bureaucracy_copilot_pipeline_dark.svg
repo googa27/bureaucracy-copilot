@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 0 1200 780" role="img" aria-labelledby="title desc">
+  <title id="title">Bureaucracy Copilot local-first workflow and capability map</title>
+  <desc id="desc">Dark-mode architecture diagram showing Gmail, Anthropic, and Google Calendar integrations around a local rules, prompts, schemas, JSON data, and human review loop.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .panel { fill: #161b22; stroke: #30363d; stroke-width: 2; rx: 18; }
+      .card { fill: #0d1117; stroke: #30363d; stroke-width: 1.6; rx: 14; }
+      .title { fill: #c9d1d9; font: 700 28px Inter, Segoe UI, Arial, sans-serif; }
+      .subtitle { fill: #8b949e; font: 16px Inter, Segoe UI, Arial, sans-serif; }
+      .label { fill: #c9d1d9; font: 700 18px Inter, Segoe UI, Arial, sans-serif; }
+      .text { fill: #c9d1d9; font: 15px Inter, Segoe UI, Arial, sans-serif; }
+      .muted { fill: #8b949e; font: 14px Inter, Segoe UI, Arial, sans-serif; }
+      .small { fill: #8b949e; font: 12px Inter, Segoe UI, Arial, sans-serif; }
+      .cyan { stroke: #39c5cf; }
+      .blue { stroke: #58a6ff; }
+      .green { stroke: #3fb950; }
+      .purple { stroke: #a371f7; }
+      .orange { stroke: #d29922; }
+      .red { stroke: #f85149; }
+      .cyanFill { fill: #39c5cf; }
+      .blueFill { fill: #58a6ff; }
+      .greenFill { fill: #3fb950; }
+      .purpleFill { fill: #a371f7; }
+      .orangeFill { fill: #d29922; }
+      .redFill { fill: #f85149; }
+      .arrow { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrowhead); }
+      .dash { stroke-dasharray: 8 7; }
+      .pill { fill: #161b22; stroke-width: 1.5; rx: 10; }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#8b949e" />
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1200" height="780" />
+  <text x="60" y="58" class="title">Bureaucracy Copilot MVP: local-first evidence workflow</text>
+  <text x="60" y="87" class="subtitle">Scaffolded personal automation for Gmail labels, claim/event records, summaries, drafts, and calendar reminders. External writes remain review-gated.</text>
+
+  <rect x="40" y="125" width="270" height="520" class="panel" />
+  <text x="70" y="165" class="label">Private local workspace</text>
+  <text x="70" y="193" class="muted">Rules, prompts, schemas, and state</text>
+
+  <rect x="70" y="225" width="210" height="62" class="card cyan" />
+  <text x="92" y="253" class="text">rules/*.yaml</text>
+  <text x="92" y="275" class="muted">sender + routing logic</text>
+
+  <rect x="70" y="310" width="210" height="62" class="card blue" />
+  <text x="92" y="338" class="text">schemas/*.json</text>
+  <text x="92" y="360" class="muted">case/event/reminder shapes</text>
+
+  <rect x="70" y="395" width="210" height="62" class="card purple" />
+  <text x="92" y="423" class="text">prompts/*.md</text>
+  <text x="92" y="445" class="muted">LLM classification/summaries</text>
+
+  <rect x="70" y="480" width="210" height="86" class="card green" />
+  <text x="92" y="509" class="text">~/.bureaucracy_copilot</text>
+  <text x="92" y="531" class="muted">local JSON records</text>
+  <text x="92" y="552" class="muted">not committed to Git</text>
+
+  <rect x="355" y="145" width="490" height="500" class="panel" />
+  <text x="385" y="185" class="label">Python CLI modes</text>
+  <text x="385" y="213" class="muted">Entry point: python -m src.main --run &lt;mode&gt;</text>
+
+  <rect x="390" y="250" width="185" height="72" class="card blue" />
+  <text x="412" y="280" class="text">classify</text>
+  <text x="412" y="303" class="muted">Gmail read → label/archive</text>
+
+  <rect x="620" y="250" width="185" height="72" class="card cyan" />
+  <text x="642" y="280" class="text">case/event extract</text>
+  <text x="642" y="303" class="muted">medical + finance JSON</text>
+
+  <rect x="390" y="370" width="185" height="72" class="card purple" />
+  <text x="412" y="400" class="text">weekly / monthly</text>
+  <text x="412" y="423" class="muted">LLM-assisted digests</text>
+
+  <rect x="620" y="370" width="185" height="72" class="card green" />
+  <text x="642" y="400" class="text">cases</text>
+  <text x="642" y="423" class="muted">open-case JSON view</text>
+
+  <rect x="505" y="505" width="185" height="72" class="card orange" />
+  <text x="527" y="535" class="text">human review gate</text>
+  <text x="527" y="558" class="muted">draft-first, no auto-send</text>
+
+  <path d="M575 286 H620" class="arrow blue" />
+  <path d="M712 322 V370" class="arrow cyan" />
+  <path d="M482 370 V322" class="arrow purple" />
+  <path d="M575 406 H620" class="arrow green" />
+  <path d="M598 442 V505" class="arrow orange" />
+  <path d="M310 255 H390" class="arrow cyan" />
+  <path d="M310 340 H390" class="arrow blue" />
+  <path d="M310 426 H390" class="arrow purple" />
+  <path d="M505 540 H280" class="arrow green" />
+
+  <rect x="890" y="125" width="270" height="520" class="panel" />
+  <text x="920" y="165" class="label">External services</text>
+  <text x="920" y="193" class="muted">Used only with user credentials</text>
+
+  <rect x="920" y="225" width="210" height="62" class="card blue" />
+  <text x="942" y="253" class="text">Gmail API</text>
+  <text x="942" y="275" class="muted">read, label, archive, draft</text>
+
+  <rect x="920" y="330" width="210" height="62" class="card purple" />
+  <text x="942" y="358" class="text">Anthropic API</text>
+  <text x="942" y="380" class="muted">classification + summaries</text>
+
+  <rect x="920" y="435" width="210" height="62" class="card green" />
+  <text x="942" y="463" class="text">Google Calendar</text>
+  <text x="942" y="485" class="muted">review/follow-up reminders</text>
+
+  <rect x="920" y="540" width="210" height="62" class="card red" />
+  <text x="942" y="568" class="text">Risk boundary</text>
+  <text x="942" y="590" class="muted">no autonomous submissions</text>
+
+  <path d="M845 286 H920" class="arrow blue" />
+  <path d="M805 406 C850 405 872 360 920 360" class="arrow purple" />
+  <path d="M690 540 C780 545 850 488 920 466" class="arrow green" />
+  <path d="M690 540 C780 585 840 576 920 572" class="arrow orange dash" />
+
+  <rect x="60" y="675" width="1080" height="62" class="panel" />
+  <circle cx="88" cy="706" r="8" class="greenFill" />
+  <text x="105" y="711" class="muted">Defined: taxonomy, schemas, rules, prompts, CLI scaffold</text>
+  <circle cx="430" cy="706" r="8" class="orangeFill" />
+  <text x="447" y="711" class="muted">MVP/in progress: Gmail + LLM runs require real credentials and review</text>
+  <circle cx="840" cy="706" r="8" class="redFill" />
+  <text x="857" y="711" class="muted">Not claimed: medical/financial advice, guaranteed recovery, validated metrics, auto-submission</text>
+</svg>
