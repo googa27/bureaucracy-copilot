@@ -1,140 +1,144 @@
 # Bureaucracy Copilot
 
-> **AI operations layer for Gmail + Google Calendar**
+Local-state-first MVP scaffold for personal Gmail and Google Calendar bureaucracy workflows.
 
-A personal bureaucracy operating system that turns your inbox into a near-autonomous platform for managing medical reimbursements, financial evidence, and administrative follow-up.
+This repository is a Python 3.11+ prototype for organizing administrative email into reviewable records: Gmail labels, medical-claim case files, finance-event records, weekly/monthly summaries, draft follow-ups, and calendar reminders. It is not a medical, insurance, legal, or financial decision system, and it does not claim validated recovery, savings, or accuracy metrics.
 
----
+## Current scope
 
-## What it does
+Implemented or scaffolded in this repo:
 
-- **Recovers money** from missed medical reimbursements (Esencial, BICE VIDA, Clínica Alemana)
-- **Organizes your inbox** with a structured label taxonomy (Action / Pipeline / Records / Waiting / Feeds)
-- **Extracts financial evidence** from bank, transfer, and payment emails into structured records
-- **Automates follow-up** via Google Calendar reminders for open claims
-- **Generates weekly/monthly summaries** so you don't have to manually scan your inbox
-- **Prepares claim packets** with missing-document detection
+- Gmail-oriented label taxonomy for action, records, waiting, feeds, and pipeline mail.
+- YAML rules, JSON schemas, and prompt templates for classification, claim cases, finance events, summaries, and reminders.
+- CLI entry point in `src/main.py` with `classify`, `weekly`, `monthly`, and `cases` modes.
+- Local JSON persistence under `~/.bureaucracy_copilot/` for case, event, and summary artifacts.
+- Draft-first and human-review framing for actions that affect email, calendar, insurers, or other third parties.
 
----
+Not proven here:
 
-## Quick Start
+- No public benchmark dataset or accuracy report.
+- No verified money-recovered, time-saved, reimbursement-success, or medical/financial outcome claim.
+- No automated insurer submission flow.
+- No meaningful test suite yet; `tests/` currently contains only `.gitkeep`.
+
+## Workflow and capability map
+
+![Dark workflow diagram showing local rules, schemas, prompts, JSON state, CLI modes, Gmail, Anthropic, Calendar, and the human review gate.](docs/assets/bureaucracy_copilot_pipeline_dark.svg)
+
+![Dark MVP status matrix listing defined, scaffolded, designed, and gap areas.](docs/assets/bureaucracy_status_matrix_dark.png)
+
+## Quick start
 
 ```bash
-# Clone the repo
 git clone https://github.com/googa27/bureaucracy-copilot.git
 cd bureaucracy-copilot
 
-# Install dependencies (Python 3.11+)
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python -m pip install -e .
 
-# Configure credentials
 cp .env.example .env
-# Add your Gmail OAuth credentials and Anthropic API key
-
-# Run first classification pass
-python -m src.ingestion.run
-
-# Generate weekly summary
-python -m src.summaries.weekly
+# Fill ANTHROPIC_API_KEY.
+# For Gmail/Calendar modes, provide Google OAuth credentials as described in .env.example.
 ```
 
----
+Run modes from the repository root:
 
-## Repository Structure
+```bash
+# Classify inbox messages, apply BC labels, and optionally archive according to rules.
+python -m src.main --run classify
 
+# Generate a weekly hygiene summary from local case state.
+python -m src.main --run weekly
+
+# Generate a monthly finance digest for a specific month.
+python -m src.main --run monthly --month YYYY-MM
+
+# Print open locally stored cases as JSON.
+python -m src.main --run cases
 ```
+
+Notes on the current CLI:
+
+- **Known import blocker:** the tracked `src/__init__.py` currently contains a bare `placeholder` name, so all `python -m src.main ...` examples above stop with `NameError` before dispatch. The commands document the intended route only; remove or replace that placeholder before treating them as runnable.
+- `python -m src.main --run cases` does not call Gmail, but the current entry point still checks for `ANTHROPIC_API_KEY` before dispatching.
+- `classify`, `weekly`, and `monthly` use Anthropic client creation; `classify`, `weekly`, and `monthly` also build a Gmail service in the current dispatch path.
+- The old README commands `python -m src.ingestion.run` and `python -m src.summaries.weekly` do not match tracked modules; use `src.main` modes instead.
+
+## Repository map
+
+```text
 bureaucracy-copilot/
-├── README.md               ← This file
-├── PRD.md                  ← Product Requirements Document
-├── PLAN.md                 ← Implementation plan
+├── README.md
+├── PRD.md
+├── PLAN.md
 ├── docs/
-│   ├── architecture.md     ← System architecture
-│   ├── label-taxonomy.md   ← Gmail label hierarchy
-│   ├── insurer-routing.md  ← Claim routing logic (Esencial/BICE/Alemana)
-│   ├── data-model.md       ← Data schemas
-│   ├── calendar-automation.md  ← Calendar event logic
-│   ├── summaries.md        ← Summary generation specs
-│   └── privacy-and-risk.md ← Privacy policy and risk register
-├── schemas/                ← JSON Schema definitions
-├── rules/                  ← YAML classification rules
-├── prompts/                ← LLM prompt templates
-├── src/                    ← Python source code
-│   ├── ingestion/          ← Gmail reading
-│   ├── classification/     ← Email classification
-│   ├── medical/            ← Reimbursement case tracking
-│   ├── finance/            ← Financial event extraction
-│   ├── calendar/           ← Calendar reminder creation
-│   ├── summaries/          ← Summary generation
-│   ├── outputs/            ← Gmail labels, drafts, events
-│   └── utils/              ← Shared utilities
-├── notebooks/              ← Exploration notebooks
-└── tests/                  ← Test suite
+│   ├── architecture.md
+│   ├── calendar-automation.md
+│   ├── data-model.md
+│   ├── insurer-routing.md
+│   ├── label-taxonomy.md
+│   ├── privacy-and-risk.md
+│   ├── summaries.md
+│   └── assets/
+├── prompts/                 # LLM prompt templates
+├── rules/                   # YAML classification and routing rules
+├── schemas/                 # JSON Schema contracts
+├── src/
+│   ├── calendar/            # Calendar reminder scaffolding
+│   ├── classification/      # Email classification
+│   ├── finance/             # Financial event extraction
+│   ├── ingestion/           # Gmail auth/reader helpers
+│   ├── medical/             # Claim case tracking
+│   ├── outputs/             # Draft/output helpers
+│   ├── summaries/           # Weekly/monthly summary helpers
+│   └── utils/               # Config/logging
+├── notebooks/               # Exploratory notebooks
+└── tests/                   # Placeholder only at present
 ```
 
----
+## Data and security boundary
 
-## Key Concepts
+This repo is public, but the intended data is private. Do not commit credentials, OAuth tokens, email exports, claim documents, finance events, summaries, generated case files, or screenshots containing personal information.
 
-### Label Taxonomy
-Emails are classified into five top-level categories with detailed sub-labels:
-- `BC/Action` — needs attention now
-- `BC/Pipeline` — job search and career
-- `BC/Records/Medical` — invoices, appointments, insurance
-- `BC/Records/Finance` — bank, transfers, investments
-- `BC/Waiting` — submitted claims and pending replies
+Expected local/private state:
 
-See [docs/label-taxonomy.md](docs/label-taxonomy.md) for the full taxonomy.
+- Environment variables or local config for `ANTHROPIC_API_KEY`.
+- Google OAuth credentials and tokens outside the repo.
+- `~/.bureaucracy_copilot/` for local JSON cases, events, and summaries.
+- Gmail and Calendar data accessed under the user's own account and scopes.
 
-### Medical Cases
-Each reimbursable medical expense becomes a structured `MedicalCase` object with:
-- Expense type and amount
-- Inferred insurer route (Esencial / BICE VIDA / combined / unknown)
-- Document checklist (invoice, form, prescription, etc.)
-- Status tracking and next action
+Safety posture:
 
-See [docs/insurer-routing.md](docs/insurer-routing.md) for routing logic.
-
-### Financial Events
-Bank transfers, payments, and receipts are extracted into structured `FinancialEvent` records with full traceability back to the source email.
-
-### Automation Cadences
-| Cadence | Jobs |
-|---------|------|
-| Daily | Classify new emails, update case statuses |
-| Weekly | Hygiene summary, reimbursement queue review |
-| Monthly | Finance digest, subscription audit |
-| Quarterly | Sport Francés handoff, benefit review |
-
----
-
-## v1 Success Definition
-
-v1 is complete when:
-1. Finance and medical emails are structurally searchable
-2. A reimbursement backlog tracker exists and is usable
-3. Calendar follow-up logic is working
-4. Weekly/monthly summaries reduce manual scanning
-5. System is ready for Claude/Codex implementation without redesign
-
----
+- The system should label, summarize, draft, and remind before it sends or submits anything.
+- Ambiguous claim routing, finance parsing, and outbound messaging require human review.
+- Source emails remain the audit trail; structured records should link back to evidence.
+- “Local-state-first” is not “local-only processing”: the current medical case tracker can send sender/subject/date plus up to 2,000 characters of an email body to Anthropic, and the Calendar helper can write insurer, amount, provider, service-date, and missing-document metadata into an event.
+- Use only accounts, calendars, and Anthropic processing that are appropriate for the data; redact or disable those paths when that disclosure is unacceptable. Sensitive medical/financial details should be minimized in prompts, logs, calendar text, screenshots, and public issues.
 
 ## Status
 
-| Component | Status |
-|-----------|--------|
-| PRD + PLAN | ✅ Complete |
-| Label taxonomy | ✅ Defined |
-| Schemas | ✅ Defined |
-| Sender rules | ✅ Defined |
-| Prompt templates | ✅ Defined |
-| Gmail classifier | 🚧 In progress |
-| Medical case tracker | 🔲 Not started |
-| Financial extractor | 🔲 Not started |
-| Calendar module | 🔲 Not started |
-| Summary generator | 🔲 Not started |
+| Area | Status | Evidence | Caveat |
+|---|---|---|---|
+| Product docs | Defined | `PRD.md`, `PLAN.md`, `docs/` | Product language is aspirational; README reflects current MVP truth. |
+| Label taxonomy | Defined | `docs/label-taxonomy.md`, `rules/gmail_sender_rules.yaml` | Needs live mailbox validation. |
+| Schemas | Defined | `schemas/*.schema.json`, `docs/data-model.md` | Schema validation is not wired through a test suite yet. |
+| Gmail classification | Scaffolded | `src/main.py`, `src/ingestion/`, `src/classification/` | Requires OAuth, Anthropic key, and careful review. |
+| Medical case tracking | Scaffolded | `src/medical/case_tracker.py` | Not medical advice; no submission automation or reimbursement guarantee. |
+| Finance event extraction | Scaffolded | `src/finance/event_extractor.py` | Not financial advice; no accuracy metrics. |
+| Summaries | Scaffolded | `src/summaries/`, `prompts/` | LLM summaries need review before action. |
+| Calendar reminders | Designed/scaffolded | `docs/calendar-automation.md`, `src/calendar/` | Do not include sensitive details in public or shared calendar text. |
+| Tests | Gap | `tests/.gitkeep` | Do not advertise passing tests until real tests exist. |
 
----
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Data model](docs/data-model.md)
+- [Label taxonomy](docs/label-taxonomy.md)
+- [Insurer routing](docs/insurer-routing.md)
+- [Calendar automation](docs/calendar-automation.md)
+- [Summaries](docs/summaries.md)
+- [Privacy and risk](docs/privacy-and-risk.md)
 
 ## License
 
-Private — personal use only. Not licensed for redistribution.
+Private / personal-use repository. No open-source license is provided, so redistribution or reuse is not granted by default.
