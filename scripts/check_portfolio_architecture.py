@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -92,6 +93,27 @@ def ignored_path(path: Path) -> bool:
     return any(ignored_name(part) for part in path.parts)
 
 
+def hidden_name(name: str) -> bool:
+    return name.startswith(".")
+
+
+def visible_runtime_dirs(dirs: list[str]) -> list[str]:
+    return sorted(name for name in dirs if not ignored_name(name) and not hidden_name(name))
+
+
+def walk_visible_tree(path: Path) -> Iterator[tuple[Path, list[str], list[str]]]:
+    for current, dirs, files in os.walk(path):
+        dirs[:] = visible_runtime_dirs(dirs)
+        yield Path(current), dirs, sorted(files)
+
+
+def python_modules(path: Path) -> Iterator[Path]:
+    for current_path, _dirs, files in walk_visible_tree(path):
+        for filename in files:
+            if filename.endswith(".py"):
+                yield current_path / filename
+
+
 def load_contract() -> dict[str, Any]:
     try:
         payload = json.loads(CONTRACT.read_text(encoding="utf-8"))
@@ -143,11 +165,7 @@ def require_exception(
 
 def runtime_dir(path: Path) -> bool:
     try:
-        return any(
-            candidate.suffix == ".py"
-            for candidate in path.rglob("*.py")
-            if not ignored_path(candidate)
-        )
+        return any(candidate.suffix == ".py" for candidate in python_modules(path))
     except OSError:
         return False
 
@@ -170,11 +188,7 @@ def validate_source(
         if not source_root.is_dir():
             errors.append(f"declared Python source root is missing: {rel_root}")
             continue
-        for current, dirs, files in os.walk(source_root):
-            dirs[:] = sorted(
-                name for name in dirs if not ignored_name(name) and not name.startswith(".")
-            )
-            current_path = Path(current)
+        for current_path, dirs, files in walk_visible_tree(source_root):
             rel_dir = current_path.relative_to(ROOT).as_posix()
             runtime_dirs = [name for name in dirs if runtime_dir(current_path / name)]
             runtime_files = [
@@ -184,6 +198,8 @@ def validate_source(
             if count > max_entries:
                 require_exception(exceptions, "source_fanout", rel_dir, count, errors)
             for filename in files:
+                if hidden_name(filename):
+                    continue
                 rel = (current_path / filename).relative_to(ROOT).as_posix()
                 allowed = (
                     filename.endswith((".py", ".pyi"))
@@ -192,13 +208,16 @@ def validate_source(
                 )
                 if not allowed:
                     require_exception(exceptions, "source_entry_type", rel, 1, errors)
-        for module in sorted(source_root.rglob("*.py")):
+        for module in sorted(python_modules(source_root)):
             if ignored_path(module):
                 continue
             try:
                 lines = len(module.read_text(encoding="utf-8").splitlines())
             except UnicodeDecodeError:
                 errors.append(f"Python module is not UTF-8 text: {module.relative_to(ROOT)}")
+                continue
+            except OSError as exc:
+                errors.append(f"Python module cannot be read: {module.relative_to(ROOT)}: {exc}")
                 continue
             if lines > max_lines:
                 require_exception(

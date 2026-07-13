@@ -207,8 +207,8 @@
     ],
     "core_repositories": {
       "PDP": "Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP.",
-      "financial_problem_formulations": "Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP.",
-      "ui_and_artifacts": "Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP."
+      "financial_problem_formulations": "Do not store private personal data in financial_problem_formulations; keep formulas and financial models synthetic or redacted, and route governed personal reports to ui_and_artifacts only after approval.",
+      "ui_and_artifacts": "Use ui_and_artifacts only for redacted governed reports and approved presentation artifacts; do not use it as raw private personal data storage."
     },
     "source_registry_plan": [
       "user-authorized Gmail readonly by default; Gmail modify only with approval",
