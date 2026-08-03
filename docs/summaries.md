@@ -77,9 +77,9 @@ UNSUBSCRIBE SUGGESTIONS
 
 | Case ID | Date | Provider | Amount | Route | Status | Next Action | Due |
 |---------|------|----------|--------|-------|--------|-------------|-----|
-| case_20260120_ABCD | Jan 20 | Clínica Alemana | $45,000 | esencial | missing_docs | Add form | ASAP |
-| case_20260201_BCDE | Feb 01 | Lab Integramédica | $12,000 | esencial | ready | Submit | Now |
-| case_20260215_CDEF | Feb 15 | Farmacias Cruz Verde | $8,500 | bicevida | submitted | Follow up | Mar 8 |
+| case_20260120_ABCD | Jan 20 | Clínica Alemana | \$45,000 | esencial | missing_docs | Add form | ASAP |
+| case_20260201_BCDE | Feb 01 | Lab Integramédica | \$12,000 | esencial | ready | Submit | Now |
+| case_20260215_CDEF | Feb 15 | Farmacias Cruz Verde | \$8,500 | bicevida | submitted | Follow up | Mar 8 |
 
 ---
 

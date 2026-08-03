@@ -21,42 +21,9 @@ try:  # pragma: no cover - exercised when optional dependency is installed
 except ImportError:  # pragma: no cover - keeps dry architecture/unit tests importable
     anthropic = None
 
-from src.classification.classifier import classify
-from src.finance.event_extractor import (
-    classify_finance_email,
-    create_event,
-    list_events,
-    save_event,
-)
 from src.governance.approval import ApprovalPolicy
 from src.governance.executor import MutationGuard
 from src.governance.redaction import redact_mapping
-from src.ingestion.auth import GMAIL_MODIFY_SCOPE, READONLY_SCOPES, get_credentials
-from src.ingestion.gmail_reader import (
-    apply_label,
-    archive_message,
-    build_service as build_gmail,
-    get_message,
-    get_or_create_label,
-    list_messages,
-    parse_message,
-)
-from src.medical.case_tracker import (
-    create_case,
-    extract_case_fields,
-    list_cases,
-    save_case,
-)
-from src.summaries.monthly_finance_summary import (
-    aggregate_monthly_events,
-    generate_monthly_summary,
-    save_monthly_summary,
-)
-from src.summaries.weekly_summary import (
-    collect_weekly_data,
-    generate_weekly_summary,
-    save_summary,
-)
 from src.utils.config import load_config
 from src.utils.logger import get_logger
 
@@ -66,6 +33,18 @@ DEFAULT_AUDIT_LOG = Path("~/.bureaucracy_copilot/audit.ndjson")
 
 def run_classify(cfg: dict[str, Any], gmail: Any, anthropic_client: Any, guard: MutationGuard) -> None:
     """Fetch unclassified emails, classify, and plan/apply labels with approval controls."""
+    from src.classification.classifier import classify
+    from src.finance.event_extractor import classify_finance_email, create_event, save_event
+    from src.ingestion.gmail_reader import (
+        apply_label,
+        archive_message,
+        get_message,
+        get_or_create_label,
+        list_messages,
+        parse_message,
+    )
+    from src.medical.case_tracker import create_case, extract_case_fields, save_case
+
     logger.info("Starting classification run")
     messages = list_messages(gmail, query="in:inbox -label:BC")
     classified = 0
@@ -115,6 +94,9 @@ def run_classify(cfg: dict[str, Any], gmail: Any, anthropic_client: Any, guard: 
 
 def run_weekly(cfg: dict[str, Any], anthropic_client: Any) -> None:
     """Generate and print the weekly summary."""
+    from src.medical.case_tracker import list_cases
+    from src.summaries.weekly_summary import collect_weekly_data, generate_weekly_summary, save_summary
+
     cases = list_cases()
     data = collect_weekly_data(cases, emails_classified=0, emails_pending=0)
     summary = generate_weekly_summary(data, anthropic_client)
@@ -125,6 +107,13 @@ def run_weekly(cfg: dict[str, Any], anthropic_client: Any) -> None:
 
 def run_monthly(cfg: dict[str, Any], anthropic_client: Any, month: str) -> None:
     """Generate and print the monthly finance digest."""
+    from src.finance.event_extractor import list_events
+    from src.summaries.monthly_finance_summary import (
+        aggregate_monthly_events,
+        generate_monthly_summary,
+        save_monthly_summary,
+    )
+
     events = list_events(month=month)
     aggregated = aggregate_monthly_events(events)
     summary = generate_monthly_summary(month, aggregated, anthropic_client)
@@ -135,6 +124,8 @@ def run_monthly(cfg: dict[str, Any], anthropic_client: Any, month: str) -> None:
 
 def run_cases(_cfg: dict[str, Any]) -> None:
     """Print open cases as redacted JSON."""
+    from src.medical.case_tracker import list_cases
+
     cases = [redact_mapping(case) for case in list_cases(status="open")]
     print(json.dumps(cases, indent=2, ensure_ascii=False))
 
@@ -185,6 +176,9 @@ def main() -> None:
         month = args.month or datetime.utcnow().strftime("%Y-%m")
         run_monthly(cfg, anthropic_client, month)
         return
+
+    from src.ingestion.auth import GMAIL_MODIFY_SCOPE, READONLY_SCOPES, get_credentials
+    from src.ingestion.gmail_reader import build_service as build_gmail
 
     scopes = (GMAIL_MODIFY_SCOPE,) if args.approve_mutations else READONLY_SCOPES
     creds = get_credentials(scopes=scopes)

@@ -1,10 +1,10 @@
 """
 classifier.py — Classify Gmail messages using sender rules and LLM fallback.
 """
-import yaml
 from pathlib import Path
-from typing import Optional
-import anthropic
+from typing import Any, Optional
+
+import yaml
 
 RULES_PATH = Path(__file__).parent.parent.parent / "rules" / "gmail_sender_rules.yaml"
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "classify_email.md"
@@ -64,7 +64,7 @@ def classify_by_rules(email: dict) -> Optional[dict]:
     return None
 
 
-def classify_by_llm(email: dict, client: anthropic.Anthropic) -> dict:
+def classify_by_llm(email: dict, client: Any) -> dict:
     """
     Classify an email using Claude when no rule matches.
     """
@@ -101,7 +101,7 @@ def classify_by_llm(email: dict, client: anthropic.Anthropic) -> dict:
     return result
 
 
-def classify(email: dict, client: Optional[anthropic.Anthropic] = None) -> dict:
+def classify(email: dict, client: Optional[Any] = None) -> dict:
     """
     Main classification entry point. Tries rules first, falls back to LLM.
     """

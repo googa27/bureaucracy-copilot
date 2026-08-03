@@ -5,8 +5,7 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-import anthropic
+from typing import Any, Optional
 
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "build_claim_case.md"
 ROUTES_PATH = Path(__file__).parent.parent.parent / "rules" / "medical_routes.yaml"
@@ -40,7 +39,7 @@ def infer_insurer(email: dict) -> Optional[str]:
     return None
 
 
-def extract_case_fields(email: dict, client: anthropic.Anthropic) -> dict:
+def extract_case_fields(email: dict, client: Any) -> dict:
     """Use Claude to extract structured fields from a medical email."""
     prompt = PROMPT_PATH.read_text()
     user_message = (
