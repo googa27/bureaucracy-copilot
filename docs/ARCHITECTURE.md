@@ -35,6 +35,7 @@ Source of truth: `docs/ARCHITECTURE.yaml`. Tracking: [Project #24](https://githu
 - Core posture: Avoid FPF; use ui_and_artifacts only for redacted governed reports; do not put private personal data in PDP.
 - Data posture: Private local data custody with dry-run-first mutation proposals, redacted audit logs, explicit human approval, least requested Google scopes, and source -> validated records -> governed outputs.
 - Preventive mutation architecture: Gmail/Calendar side effects are represented as `MutationProposal` records, redacted, audited, and applied only through `MutationGuard` after explicit approval flags. This is a privacy-by-design control, not evidence of any prior leak.
+- CLI dependency boundary: local inspection mode `python -m src.main --run cases` imports only local-state/redaction code and is tested to run without Anthropic, Google packages, OAuth credentials, or `ANTHROPIC_API_KEY`; Gmail/LLM dependencies are imported only by modes that need them.
 
 ### Extension and exception discipline
 

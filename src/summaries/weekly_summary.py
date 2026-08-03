@@ -4,8 +4,7 @@ weekly_summary.py -- Generate weekly inbox hygiene and case status summaries.
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
-import anthropic
+from typing import Any, Optional
 
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "summarize_weekly_hygiene.md"
 
@@ -43,7 +42,7 @@ def collect_weekly_data(
     }
 
 
-def generate_weekly_summary(data: dict, client: anthropic.Anthropic) -> str:
+def generate_weekly_summary(data: dict, client: Any) -> str:
     """Use Claude to produce a readable weekly summary."""
     prompt = PROMPT_PATH.read_text()
     user_message = json.dumps(data, indent=2, ensure_ascii=False)

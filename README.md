@@ -59,9 +59,9 @@ python -m src.main --run cases
 
 Notes on the current CLI:
 
-- **Known import blocker:** the tracked `src/__init__.py` currently contains a bare `placeholder` name, so all `python -m src.main ...` examples above stop with `NameError` before dispatch. The commands document the intended route only; remove or replace that placeholder before treating them as runnable.
-- `python -m src.main --run cases` does not call Gmail, but the current entry point still checks for `ANTHROPIC_API_KEY` before dispatching.
-- `classify`, `weekly`, and `monthly` use Anthropic client creation; `classify`, `weekly`, and `monthly` also build a Gmail service in the current dispatch path.
+- `python -m src.main --run cases` reads only local case JSON and does not require Anthropic, Google packages, OAuth credentials, or `ANTHROPIC_API_KEY`.
+- `weekly` and `monthly` use Anthropic client creation after dispatch and require `ANTHROPIC_API_KEY` plus the `anthropic` package.
+- `classify` uses Anthropic and builds a Gmail service; default classify mode requests readonly Gmail scope and plans/audits mutations as dry-run proposals unless explicit approval flags are supplied.
 - The old README commands `python -m src.ingestion.run` and `python -m src.summaries.weekly` do not match tracked modules; use `src.main` modes instead.
 
 ## Repository map
@@ -93,7 +93,7 @@ bureaucracy-copilot/
 │   ├── summaries/           # Weekly/monthly summary helpers
 │   └── utils/               # Config/logging
 ├── notebooks/               # Exploratory notebooks
-└── tests/                   # Placeholder only at present
+└── tests/                   # Unit governance/import-boundary tests plus architecture gates
 ```
 
 ## Data and security boundary
@@ -127,7 +127,7 @@ Safety posture:
 | Finance event extraction | Scaffolded | `src/finance/event_extractor.py` | Not financial advice; no accuracy metrics. |
 | Summaries | Scaffolded | `src/summaries/`, `prompts/` | LLM summaries need review before action. |
 | Calendar reminders | Designed/scaffolded | `docs/calendar-automation.md`, `src/calendar/` | Do not include sensitive details in public or shared calendar text. |
-| Tests | Gap | `tests/.gitkeep` | Do not advertise passing tests until real tests exist. |
+| Tests | Initial coverage | `tests/unit/test_governance_controls.py`, `tests/unit/test_cli_import_boundaries.py`, `tests/architecture/` | Covers governance controls, dry-run mutation/audit behavior, local `cases` CLI import boundary, and architecture gates; no live Gmail/Calendar/LLM validation or accuracy benchmark. |
 
 ## Documentation
 

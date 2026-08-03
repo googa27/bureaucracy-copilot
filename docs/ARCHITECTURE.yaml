@@ -226,7 +226,8 @@
         "plugin only for measured shared lifecycle/tool needs",
         "MCP only for measured interoperable multi-client remote discovery"
       ],
-      "mutation_safety": "Mutation is explicit, typed, least-privileged, human-reviewable, and independently verified; no autonomous public side effects by default."
+      "mutation_safety": "Mutation is explicit, typed, least-privileged, human-reviewable, and independently verified; no autonomous public side effects by default.",
+      "local_inspection_boundary": "python -m src.main --run cases imports only local-state/redaction code and is tested to run without Anthropic, Google packages, OAuth credentials, or ANTHROPIC_API_KEY."
     },
     "human": {
       "interaction": "Typed service facade and notebook-safe redacted DTOs; no side-effectful dunders.",
@@ -269,6 +270,11 @@
       "lint": "ruff check .",
       "architecture": "python scripts/check_portfolio_architecture.py"
     },
+    "runtime_coverage": [
+      "tests/unit/test_governance_controls.py covers redaction, dry-run mutation proposals, audit events, and guarded Gmail mutators with fakes",
+      "tests/unit/test_cli_import_boundaries.py covers the local cases CLI path without Anthropic/Google credentials or packages",
+      "tests/architecture/ covers the portfolio architecture and AI hierarchy policy gates"
+    ],
     "ci_workflow": ".github/workflows/portfolio-architecture.yml",
     "mirror_source": "where pertinent"
   },

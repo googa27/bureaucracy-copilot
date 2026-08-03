@@ -4,8 +4,7 @@ monthly_finance_summary.py -- Generate monthly finance digest from financial eve
 import json
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
-import anthropic
+from typing import Any, Optional
 
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "summarize_finance_monthly.md"
 
@@ -45,7 +44,7 @@ def aggregate_monthly_events(events: list[dict]) -> dict:
     }
 
 
-def generate_monthly_summary(month: str, aggregated: dict, client: anthropic.Anthropic) -> str:
+def generate_monthly_summary(month: str, aggregated: dict, client: Any) -> str:
     """Use Claude to generate a readable monthly finance digest."""
     prompt = PROMPT_PATH.read_text()
     user_message = f"Month: {month}\n\n" + json.dumps(aggregated, indent=2, ensure_ascii=False)
