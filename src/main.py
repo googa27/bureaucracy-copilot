@@ -11,15 +11,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import sys
 from pathlib import Path
 from typing import Any
-
-try:  # pragma: no cover - exercised when optional dependency is installed
-    import anthropic
-except ImportError:  # pragma: no cover - keeps dry architecture/unit tests importable
-    anthropic = None
 
 from src.governance.approval import ApprovalPolicy
 from src.governance.executor import MutationGuard
@@ -131,7 +127,9 @@ def run_cases(_cfg: dict[str, Any]) -> None:
 
 
 def build_anthropic_client(cfg: dict[str, Any]) -> Any:
-    if anthropic is None:
+    try:  # pragma: no cover - exercised when optional dependency is installed
+        anthropic = importlib.import_module("anthropic")
+    except ImportError:  # pragma: no cover - depends on local optional package set
         logger.error("anthropic package is not installed")
         sys.exit(1)
     api_key = cfg.get("anthropic_api_key")

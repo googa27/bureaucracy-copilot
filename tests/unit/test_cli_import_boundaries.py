@@ -26,7 +26,7 @@ _BLOCKED = ("anthropic", "google", "googleapiclient", "google_auth_oauthlib")
 class _Blocker(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
         if fullname in _BLOCKED or any(fullname.startswith(prefix + ".") for prefix in _BLOCKED):
-            raise ImportError(f"blocked optional dependency import: {fullname}")
+            raise RuntimeError(f"optional dependency import leaked into local CLI path: {fullname}")
         return None
 
 
