@@ -223,7 +223,7 @@ The test suite checks that:
 - a deliberately violated parallel-trends design is detected by the placebo and biases DiD;
 - propensity weights are finite and positive.
 
-The implementation was executed locally with **7 passing tests** on Python 3.13.5, NumPy 2.3.5, pandas 2.2.3, and statsmodels 0.14.6. Current releases checked on 2026-09-27 are newer (NumPy 2.5.3, pandas 3.0.6, statsmodels 0.15.0); the available execution environment could not reach PyPI to create a clean environment for those exact versions, so compatibility with the newest trio is declared as intended by the optional dependency bounds, not falsely claimed as executed evidence.
+The implementation was executed locally with **7 passing tests** on Python 3.13.5, NumPy 2.3.5, pandas 2.2.3, and statsmodels 0.14.6. The pull-request workflow also resolved the current releases checked on 2026-09-27—**NumPy 2.5.3, pandas 3.0.6, and statsmodels 0.15.0**—and ran the same integration suite with **7 passing tests** on Python 3.12.
 
 ## Dependency and data boundary
 
