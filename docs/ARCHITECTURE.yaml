@@ -424,11 +424,12 @@
   },
   "exceptions": [
     {
-      "scope": "examples/impact_evaluation Python package outside src",
+      "rule": "research_example_outside_src",
+      "path": "examples/impact_evaluation",
       "reason": "Keep an interview-sized public-synthetic causal-impact research artifact isolated from the private-data application runtime and optional scientific dependencies.",
       "owner": "repository maintainer",
       "risk": "The example could drift into runtime coupling or be mistaken for production experimentation capability.",
-      "accepted_ceiling": "Only examples/impact_evaluation; no imports from src runtime and no causal-impact scientific dependencies added to core project dependencies.",
+      "accepted_ceiling": 1,
       "refactoring_trigger": "Move supported causal-impact code under src only if it becomes an application capability consumed by runtime code, with production data/governance contracts and dedicated architecture tests."
     }
   ]
