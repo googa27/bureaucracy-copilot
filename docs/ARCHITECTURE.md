@@ -26,6 +26,7 @@ Source of truth: `docs/ARCHITECTURE.yaml`. Tracking: [Project #24](https://githu
 | Architecture contract bootstrap | Python standard-library JSON parser over the JSON subset of YAML 1.2 | Hand-written YAML parser; mandatory platform service | Repo-local dependency-free structural gate; richer maintained tools remain repo-specific. |
 | Import/dependency rules | Existing repo lint/import tools where configured; declarative YAML boundary is authoritative | Custom import framework | Keep custom AST checks narrow; use maintained Import Linter/Tach/Ruff/deptry when warranted. |
 | AI interaction | AGENTS + deterministic CLI/contracts + capability discovery + skills | MCP/plugin in every repo | Escalate only after measured interoperability/lifecycle need. |
+| Causal-impact research example | Optional NumPy + pandas + statsmodels `impact` profile; stdlib SQLite for SQL execution | Hand-coded estimators; a general causal framework | Isolated to `examples/impact_evaluation`; the core runtime does not import the scientific stack. |
 
 ### Two-user design
 
@@ -36,6 +37,7 @@ Source of truth: `docs/ARCHITECTURE.yaml`. Tracking: [Project #24](https://githu
 - Data posture: Private local data custody with dry-run-first mutation proposals, redacted audit logs, explicit human approval, least requested Google scopes, and source -> validated records -> governed outputs.
 - Preventive mutation architecture: Gmail/Calendar side effects are represented as `MutationProposal` records, redacted, audited, and applied only through `MutationGuard` after explicit approval flags. This is a privacy-by-design control, not evidence of any prior leak.
 - CLI dependency boundary: local inspection mode `python -m src.main --run cases` imports only local-state/redaction code and is tested to run without Anthropic, Google packages, OAuth credentials, or `ANTHROPIC_API_KEY`; Gmail/LLM dependencies are imported only by modes that need them.
+- Causal-impact example boundary: `examples/impact_evaluation` is public-synthetic and non-runtime. It may use the optional `impact` dependency profile, must not consume Gmail/Calendar/local private state, and must not be advertised as production impact evidence.
 
 ### Extension and exception discipline
 

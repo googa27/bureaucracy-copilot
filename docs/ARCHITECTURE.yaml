@@ -110,7 +110,11 @@
       "checker": "python3 scripts/check_ai_hierarchy_policy.py",
       "single_branch_runtime_directory": "review_required_above_minimum_descendant_modules",
       "two_branch_dominance_threshold": 0.95
-    }
+    },
+    "research_example_roots": [
+      "examples/impact_evaluation"
+    ],
+    "research_example_policy": "Public-synthetic, non-runtime examples may live under examples/ when isolated from src imports, optional dependencies are separately declared, and tests skip cleanly without the extra."
   },
   "limits": {
     "max_immediate_runtime_entries": 10,
@@ -137,6 +141,28 @@
         "evidence": "pyproject.toml/package.json/requirements and docs/ARCHITECTURE.md",
         "adapter_boundary": "repository public ports",
         "custom_code_reason": "domain semantics, composition, adapters, or genuinely missing algorithms only"
+      },
+      {
+        "capability": "optional causal-impact research example",
+        "selected": [
+          "NumPy",
+          "pandas",
+          "statsmodels"
+        ],
+        "alternatives": [
+          "hand-written OLS/logit/covariance estimators",
+          "adding a general causal-inference framework"
+        ],
+        "evidence": "Official PyPI metadata checked 2026-09-27: statsmodels 0.15.0 (2026-08-27), pandas 3.0.6 (2026-09-17), NumPy 2.5.3 (2026-09-06). Local execution evidence uses statsmodels 0.14.6, pandas 2.2.3, NumPy 2.3.5.",
+        "adapter_boundary": "examples/impact_evaluation only through the optional [impact] extra; src runtime must not import these packages for this capability.",
+        "custom_code_reason": "Custom code owns the synthetic DGP, identification design, SQL preparation, and diagnostic composition; OLS/WLS/logit/covariance estimation uses maintained statsmodels APIs.",
+        "maintenance_evidence": "Active releases and verified project metadata on PyPI as of 2026-09-27.",
+        "api_stability_evidence": "Uses public statsmodels formula OLS/WLS/Logit APIs, pandas DataFrame/read_sql_query APIs, NumPy RNG/array APIs, and Python stdlib sqlite3.",
+        "license_evidence": "statsmodels: BSD-3-Clause; pandas: BSD-3-Clause; NumPy: BSD-3-Clause plus permissive bundled-component licenses, per official PyPI metadata.",
+        "security_evidence": "GitHub Advisory Database spot-check on 2026-09-27 found no returned advisory applicable to the selected modern ranges; this is not a substitute for a reproducible lockfile vulnerability audit before production deployment.",
+        "oracle_or_reference_tests": [
+          "tests/integration/test_impact_evaluation.py"
+        ]
       },
       {
         "capability": "portfolio architecture bootstrap",
@@ -268,14 +294,17 @@
       "setup": "python -m pip install -r requirements.txt",
       "test": "python -m pytest -q",
       "lint": "ruff check .",
-      "architecture": "python scripts/check_portfolio_architecture.py"
+      "architecture": "python scripts/check_portfolio_architecture.py",
+      "impact_setup": "python -m pip install -e '.[impact]' pytest",
+      "impact_test": "python -m pytest -q tests/integration/test_impact_evaluation.py"
     },
     "runtime_coverage": [
       "tests/unit/test_governance_controls.py covers redaction, dry-run mutation proposals, audit events, and guarded Gmail mutators with fakes",
       "tests/unit/test_cli_import_boundaries.py covers the local cases CLI path without Anthropic/Google credentials or packages",
-      "tests/architecture/ covers the portfolio architecture and AI hierarchy policy gates"
+      "tests/architecture/ covers the portfolio architecture and AI hierarchy policy gates",
+      "tests/integration/test_impact_evaluation.py covers public-synthetic RCT recovery, observational selection bias, DiD/IPW recovery, propensity balance/overlap, tested SQLite preparation, and a deliberately violated parallel-trends failure mode when the optional impact dependencies are installed"
     ],
-    "ci_workflow": ".github/workflows/portfolio-architecture.yml",
+    "ci_workflow": ".github/workflows/portfolio-architecture.yml runs the architecture contract and optional causal-impact integration tests on pull requests.",
     "mirror_source": "where pertinent"
   },
   "data": {
@@ -309,7 +338,10 @@
     ],
     "flow": "source registry -> typed acquisition -> classification/extraction -> redacted mutation proposal -> human approval gate -> audited side effect or local governed output",
     "storage_and_replay": "Immutable raw/content-addressed inputs; canonical typed products; idempotent replay by source identity and effective/vintage time where applicable.",
-    "quality_and_lineage": "Validate schema, grain, units, classification, lineage, freshness, licence, and content identity before consumption; fail closed on missing evidence."
+    "quality_and_lineage": "Validate schema, grain, units, classification, lineage, freshness, licence, and content identity before consumption; fail closed on missing evidence.",
+    "public_synthetic_examples": [
+      "examples/impact_evaluation generates its own synthetic reminder outcomes and must not read Gmail, Calendar, or local private state."
+    ]
   },
   "governance": {
     "architecture_source": "docs/ARCHITECTURE.yaml",
@@ -392,5 +424,15 @@
       "write_permission_exceptions": []
     }
   },
-  "exceptions": []
+  "exceptions": [
+    {
+      "rule": "research_example_outside_src",
+      "path": "examples/impact_evaluation",
+      "reason": "Keep an interview-sized public-synthetic causal-impact research artifact isolated from the private-data application runtime and optional scientific dependencies.",
+      "owner": "repository maintainer",
+      "risk": "The example could drift into runtime coupling or be mistaken for production experimentation capability.",
+      "accepted_ceiling": 1,
+      "refactoring_trigger": "Move supported causal-impact code under src only if it becomes an application capability consumed by runtime code, with production data/governance contracts and dedicated architecture tests."
+    }
+  ]
 }
