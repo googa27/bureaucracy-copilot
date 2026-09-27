@@ -294,7 +294,9 @@
       "setup": "python -m pip install -r requirements.txt",
       "test": "python -m pytest -q",
       "lint": "ruff check .",
-      "architecture": "python scripts/check_portfolio_architecture.py"
+      "architecture": "python scripts/check_portfolio_architecture.py",
+      "impact_setup": "python -m pip install -e '.[impact]' pytest",
+      "impact_test": "python -m pytest -q tests/integration/test_impact_evaluation.py"
     },
     "runtime_coverage": [
       "tests/unit/test_governance_controls.py covers redaction, dry-run mutation proposals, audit events, and guarded Gmail mutators with fakes",
@@ -302,7 +304,7 @@
       "tests/architecture/ covers the portfolio architecture and AI hierarchy policy gates",
       "tests/integration/test_impact_evaluation.py covers public-synthetic RCT recovery, observational selection bias, DiD/IPW recovery, propensity balance/overlap, tested SQLite preparation, and a deliberately violated parallel-trends failure mode when the optional impact dependencies are installed"
     ],
-    "ci_workflow": ".github/workflows/portfolio-architecture.yml",
+    "ci_workflow": ".github/workflows/portfolio-architecture.yml runs the architecture contract and optional causal-impact integration tests on pull requests.",
     "mirror_source": "where pertinent"
   },
   "data": {
