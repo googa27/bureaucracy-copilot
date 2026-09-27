@@ -13,13 +13,14 @@ Implemented or scaffolded in this repo:
 - CLI entry point in `src/main.py` with `classify`, `weekly`, `monthly`, and `cases` modes.
 - Local JSON persistence under `~/.bureaucracy_copilot/` for case, event, and summary artifacts.
 - Draft-first and human-review framing for actions that affect email, calendar, insurers, or other third parties.
+- Public-synthetic reminder impact evaluation using an RCT benchmark, DiD, propensity weighting, SQL preparation, diagnostics, and an explicit parallel-trends failure case.
 
 Not proven here:
 
 - No public benchmark dataset or accuracy report.
 - No verified money-recovered, time-saved, reimbursement-success, or medical/financial outcome claim.
 - No automated insurer submission flow.
-- No meaningful test suite yet; `tests/` currently contains only `.gitkeep`.
+- No live Gmail/Calendar/LLM accuracy benchmark; current tests cover governance/import boundaries plus the optional public-synthetic causal-impact example.
 
 ## Workflow and capability map
 
@@ -80,6 +81,8 @@ bureaucracy-copilot/
 │   ├── privacy-and-risk.md
 │   ├── summaries.md
 │   └── assets/
+├── examples/
+│   └── impact_evaluation/   # Public-synthetic RCT/DiD/propensity/SQL case study
 ├── prompts/                 # LLM prompt templates
 ├── rules/                   # YAML classification and routing rules
 ├── schemas/                 # JSON Schema contracts
@@ -127,6 +130,7 @@ Safety posture:
 | Finance event extraction | Scaffolded | `src/finance/event_extractor.py` | Not financial advice; no accuracy metrics. |
 | Summaries | Scaffolded | `src/summaries/`, `prompts/` | LLM summaries need review before action. |
 | Calendar reminders | Designed/scaffolded | `docs/calendar-automation.md`, `src/calendar/` | Do not include sensitive details in public or shared calendar text. |
+| Causal impact example | Implemented | `examples/impact_evaluation/`, `tests/integration/test_impact_evaluation.py` | Public-synthetic interview-sized artifact; not evidence of production impact. |
 | Tests | Initial coverage | `tests/unit/test_governance_controls.py`, `tests/unit/test_cli_import_boundaries.py`, `tests/architecture/` | Covers governance controls, dry-run mutation/audit behavior, local `cases` CLI import boundary, and architecture gates; no live Gmail/Calendar/LLM validation or accuracy benchmark. |
 
 ## Documentation
@@ -138,6 +142,7 @@ Safety posture:
 - [Calendar automation](docs/calendar-automation.md)
 - [Summaries](docs/summaries.md)
 - [Privacy and risk](docs/privacy-and-risk.md)
+- [Reminder impact evaluation](examples/impact_evaluation/README.md)
 
 ## License
 
