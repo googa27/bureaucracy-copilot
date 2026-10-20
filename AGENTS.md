@@ -79,7 +79,8 @@ Mutation architecture: classifiers/extractors propose Gmail/Calendar changes; `s
 
 - Setup: `python -m pip install -r requirements.txt`
 - Tests: `python -m pytest -q`
-- Lint/format: `ruff check .`
+- Lint: `python -m ruff check .`
+- Format: `python -m ruff format --check .`
 - Portfolio architecture: `python scripts/check_portfolio_architecture.py`
 - Governance setup: `python3 -m pip install -r requirements-architecture.txt`
 - AI/hierarchy policy: `python3 scripts/check_ai_hierarchy_policy.py`
@@ -98,3 +99,15 @@ python -m pytest -q tests/integration/test_impact_evaluation.py tests/integratio
 ```
 
 These CPU-only commands use generated public-synthetic user-period data (days; seed 7; 6400 rows per design; 12000-row panel cap). No provider access is involved. Python 3.12/Linux x86_64 is the hash-locked configured gate. Use `requirements-impact.lock` with `--require-hashes --only-binary=:all:`; its header records generation inputs. PR #9 and issues #10/#11 track executed evidence and remaining acceptance, including installed/copied origins and dedicated human/security review; configuration alone is not proof.
+
+
+## Issue #11: repository quality gates
+
+The Python 3.12 hash-locked CI job runs the complete Ruff lint and format gates
+above after dependency installation. `python -m pytest -q` includes executable
+workflow invocation checks and synthetic JSON error/UTC compatibility regressions.
+Expected JSON decode failures retain legacy fallback outputs; unexpected failures
+propagate. Legacy event/case/log timestamps remain naive UTC ISO strings; audit
+records remain offset-qualified. See `docs/ARCHITECTURE.md` for boundary contracts.
+Human/security review and verification on actual resulting main remain outstanding;
+local gates and configured CI are not evidence of those approvals or hosted success.

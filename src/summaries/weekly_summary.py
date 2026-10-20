@@ -1,10 +1,11 @@
 """
 weekly_summary.py -- Generate weekly inbox hygiene and case status summaries.
 """
+
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "summarize_weekly_hygiene.md"
 
@@ -13,11 +14,11 @@ def collect_weekly_data(
     cases: list[dict],
     emails_classified: int,
     emails_pending: int,
-    week_start: Optional[str] = None,
+    week_start: str | None = None,
 ) -> dict:
     """Aggregate data for the weekly summary."""
     if week_start is None:
-        today = datetime.utcnow().date()
+        today = datetime.now(UTC).date()
         week_start = str(today - timedelta(days=today.weekday()))
 
     open_cases = [c for c in cases if c.get("status") == "open"]
@@ -56,7 +57,7 @@ def generate_weekly_summary(data: dict, client: Any) -> str:
     return message.content[0].text.strip()
 
 
-def save_summary(summary: str, week_start: str, output_dir: Optional[Path] = None) -> Path:
+def save_summary(summary: str, week_start: str, output_dir: Path | None = None) -> Path:
     """Save a generated summary to disk."""
     if output_dir is None:
         output_dir = Path("~/.bureaucracy_copilot/summaries").expanduser()

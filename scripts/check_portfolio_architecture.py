@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Validate the portfolio architecture contract without third-party dependencies.
 
 `docs/ARCHITECTURE.yaml` is deliberately written in the JSON subset of YAML 1.2,

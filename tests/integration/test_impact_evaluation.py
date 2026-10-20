@@ -72,9 +72,7 @@ def test_ipw_did_recovers_effect_under_parallel_trends() -> None:
 
 
 def test_pretrend_placebo_flags_parallel_trends_violation() -> None:
-    panel_ok = simulate_rollout(
-        design="observational", n_users=1200, seed=13, parallel_trends=True
-    )
+    panel_ok = simulate_rollout(design="observational", n_users=1200, seed=13, parallel_trends=True)
     panel_bad = simulate_rollout(
         design="observational", n_users=1200, seed=13, parallel_trends=False
     )

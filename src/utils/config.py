@@ -1,10 +1,10 @@
 """
 config.py -- Configuration loader for Bureaucracy Copilot.
 """
+
 import json
 import os
 from pathlib import Path
-from typing import Optional
 
 DEFAULT_CONFIG = {
     "anthropic_model": "claude-opus-4-5",
@@ -20,7 +20,7 @@ DEFAULT_CONFIG = {
 CONFIG_PATH = Path("~/.bureaucracy_copilot/config.json").expanduser()
 
 
-def load_config(path: Optional[Path] = None) -> dict:
+def load_config(path: Path | None = None) -> dict:
     """Load configuration from file, merging with defaults."""
     cfg = DEFAULT_CONFIG.copy()
     config_file = path or CONFIG_PATH
@@ -39,7 +39,7 @@ def load_config(path: Optional[Path] = None) -> dict:
     return cfg
 
 
-def save_config(cfg: dict, path: Optional[Path] = None) -> None:
+def save_config(cfg: dict, path: Path | None = None) -> None:
     """Save configuration to file."""
     config_file = path or CONFIG_PATH
     config_file.parent.mkdir(parents=True, exist_ok=True)

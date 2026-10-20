@@ -55,3 +55,54 @@ python -m pytest -q tests/integration/test_impact_evaluation.py tests/integratio
 ```
 
 These CPU-only commands use generated public-synthetic user-period data (days; seed 7; 6400 rows per design; 12000-row panel cap). No provider access is involved. Python 3.12/Linux x86_64 is the hash-locked configured gate. `ARCHITECTURE.yaml` defines the normal wheel plus copied-example profile and transparent third-party reuse. PR #9 and issues #10/#11 retain executed evidence and remaining human/security and resulting-main acceptance.
+
+
+## Issue #11: complete quality gates and compatibility
+
+The existing Python 3.12 hash-locked workflow runs `python -m ruff check .` and
+`python -m ruff format --check .` after dependency installation, followed by
+`python -m pytest -q`. These are complete repository gates using the inherited
+rule selection; no ignores, baselines, dependency changes, or relaxed architecture
+limits are introduced. `tests/architecture/test_quality_workflow.py` uses installed
+PyYAML to inspect actual workflow run steps and installation order. Python-invoked
+non-executable governance scripts omit misleading shebangs.
+
+Library rationale: retain installed Ruff, stdlib `json`/`datetime`, and PyYAML's
+safe loader. Their public APIs already cover these boundaries; a custom parser,
+clock framework, or new dependency would add no capability. Ruff's
+[BLE001 guidance](https://docs.astral.sh/ruff/rules/blind-except/) supports catching
+only expected errors. Classification, medical extraction, and draft generation
+catch only `json.JSONDecodeError` around decoding synthetic/provider response text.
+Valid JSON results and malformed-JSON fallback payloads remain compatible,
+including the classifier's existing `method="llm"` fallback. This change adds no
+schema validation or data migration. Decoder TypeError, non-JSON ValueError,
+RuntimeError, and resource errors propagate with their original identity.
+The policy CLI handles only contract read/decode/shape errors (`OSError`,
+`UnicodeError`, `yaml.YAMLError`, `ContractShapeError`) during loading; validation
+runs outside that catch so programmer/runtime defects retain their traceback.
+Tests use real JSON decoding for expected outputs and narrowly injected decoder
+or validation failures for unexpected errors, without live provider calls.
+
+Ruff's [DTZ003 guidance](https://docs.astral.sh/ruff/rules/call-datetime-utcnow/)
+and Python's [aware/naive datetime contract](https://docs.python.org/3.12/library/datetime.html#aware-and-naive-objects)
+support an explicitly aware UTC clock. Finance event `created_at`, medical case
+`created_at`/`updated_at`, and JSON logger `ts` call `datetime.now(UTC)` then remove
+`tzinfo` only at their legacy serialization boundary. Exact naive ISO strings and
+naive date arithmetic remain compatible. Weekly default dates and monthly CLI
+default months derive directly from aware UTC, never local time.
+`src/governance/audit.py` already used aware UTC and continues to emit `+00:00`;
+Ruff's `UTC` alias modernization preserves that contract. Fixed synthetic clocks
+separate UTC from local day/month boundaries and reject the legacy clock path.
+No inference, propensity, weighting, coverage, or synthetic-data semantics change.
+
+Local source gates do not establish hosted CI, human/security review, provider
+acceptance, scientific acceptance, or verification on actual resulting main.
+Those reviews and merge/main gates remain outstanding; no issue closure is claimed.
+
+
+The locked research environment need not contain the separate security tooling.
+Run `zizmor --offline --min-severity medium .` using an authorized compatible
+installation of the declared tool; report its actual result for the exact revision.
+Passing local pinact and policy self-tests are partial checks, not a replacement
+security-audit result. Reused immutable dependencies and separately installed
+project wheels must be identified independently in retained execution evidence.

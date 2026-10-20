@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Validate evidence-backed AI-assistance and semantic source-hierarchy policy."""
 
 from __future__ import annotations
@@ -401,10 +400,11 @@ def write_line(message: str) -> None:
 
 def main() -> int:
     try:
-        errors = validate(load_contract())
-    except Exception as exc:
+        contract = load_contract()
+    except (OSError, UnicodeError, yaml.YAMLError, ContractShapeError) as exc:
         write_line(f"AI/hierarchy policy FAILED\n- {type(exc).__name__}: {exc}")
         return 1
+    errors = validate(contract)
     if errors:
         write_line("AI/hierarchy policy FAILED")
         for error in errors:

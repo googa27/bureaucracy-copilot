@@ -1,6 +1,7 @@
 """
 reminder_creator.py -- Create Google Calendar events for medical follow-ups and review blocks.
 """
+
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -50,7 +51,9 @@ def create_followup_event(
         "reminders": {"useDefault": False, "overrides": [{"method": "popup", "minutes": 480}]},
         "colorId": "6",
     }
-    return _insert_event(service, calendar_id, event, guard=guard, action="calendar.create_followup_event")
+    return _insert_event(
+        service, calendar_id, event, guard=guard, action="calendar.create_followup_event"
+    )
 
 
 def create_weekly_review_block(
@@ -71,13 +74,18 @@ def create_weekly_review_block(
     event = {
         "summary": "Weekly Bureaucracy Review",
         "description": "Weekly inbox hygiene pass: open cases, reimbursements, finance events.",
-        "start": {"dateTime": f"{review_date.isoformat()}T19:00:00", "timeZone": "America/Santiago"},
+        "start": {
+            "dateTime": f"{review_date.isoformat()}T19:00:00",
+            "timeZone": "America/Santiago",
+        },
         "end": {"dateTime": f"{review_date.isoformat()}T20:00:00", "timeZone": "America/Santiago"},
         "recurrence": ["RRULE:FREQ=WEEKLY;BYDAY=SU"],
         "reminders": {"useDefault": False, "overrides": [{"method": "popup", "minutes": 30}]},
         "colorId": "2",
     }
-    return _insert_event(service, calendar_id, event, guard=guard, action="calendar.create_weekly_review_block")
+    return _insert_event(
+        service, calendar_id, event, guard=guard, action="calendar.create_weekly_review_block"
+    )
 
 
 def create_quarterly_handoff(
@@ -91,7 +99,10 @@ def create_quarterly_handoff(
     event = {
         "summary": "Quarterly Bureaucracy Handoff",
         "description": "Close resolved cases, quarterly finance summary, review benefit utilization.",
-        "start": {"dateTime": f"{quarter_end.isoformat()}T10:00:00", "timeZone": "America/Santiago"},
+        "start": {
+            "dateTime": f"{quarter_end.isoformat()}T10:00:00",
+            "timeZone": "America/Santiago",
+        },
         "end": {"dateTime": f"{quarter_end.isoformat()}T12:00:00", "timeZone": "America/Santiago"},
         "reminders": {
             "useDefault": False,
@@ -102,7 +113,9 @@ def create_quarterly_handoff(
         },
         "colorId": "9",
     }
-    return _insert_event(service, calendar_id, event, guard=guard, action="calendar.create_quarterly_handoff")
+    return _insert_event(
+        service, calendar_id, event, guard=guard, action="calendar.create_quarterly_handoff"
+    )
 
 
 def _insert_event(

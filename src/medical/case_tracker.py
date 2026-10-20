@@ -1,11 +1,12 @@
 """
 case_tracker.py — Build and track medical reimbursement cases from classified emails.
 """
+
 import json
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "build_claim_case.md"
 ROUTES_PATH = Path(__file__).parent.parent.parent / "rules" / "medical_routes.yaml"
@@ -18,12 +19,13 @@ def _load_route_rules() -> dict:
     global _route_rules
     if _route_rules is None:
         import yaml
+
         with open(ROUTES_PATH) as f:
             _route_rules = yaml.safe_load(f)
     return _route_rules
 
 
-def infer_insurer(email: dict) -> Optional[str]:
+def infer_insurer(email: dict) -> str | None:
     """Infer the relevant insurer from sender domain or subject keywords."""
     rules = _load_route_rules()
     sender = email.get("from", "").lower()
@@ -57,7 +59,7 @@ def extract_case_fields(email: dict, client: Any) -> dict:
     response = message.content[0].text.strip()
     try:
         return json.loads(response)
-    except Exception:
+    except json.JSONDecodeError:
         return {"parse_error": response}
 
 
@@ -66,8 +68,8 @@ def create_case(email: dict, fields: dict) -> dict:
     insurer = fields.get("insurer") or infer_insurer(email)
     return {
         "case_id": str(uuid.uuid4()),
-        "created_at": datetime.utcnow().isoformat(),
-        "updated_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(UTC).replace(tzinfo=None).isoformat(),
+        "updated_at": datetime.now(UTC).replace(tzinfo=None).isoformat(),
         "status": "open",
         "insurer": insurer,
         "provider": fields.get("provider"),
@@ -95,7 +97,7 @@ def load_case(case_id: str) -> dict:
     return json.loads(path.read_text())
 
 
-def list_cases(status: Optional[str] = None) -> list[dict]:
+def list_cases(status: str | None = None) -> list[dict]:
     """List all cases, optionally filtered by status."""
     CASES_DIR.mkdir(parents=True, exist_ok=True)
     cases = []

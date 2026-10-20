@@ -1,13 +1,13 @@
 """
 draft_generator.py -- Draft follow-up emails for pending reimbursement cases.
 """
+
 from __future__ import annotations
 
 import base64
 import json
 from email.mime.text import MIMEText
 from pathlib import Path
-from typing import Optional
 
 import anthropic
 
@@ -53,7 +53,7 @@ def draft_followup_email(
 
     try:
         return json.loads(response)
-    except Exception:
+    except json.JSONDecodeError:
         return {
             "subject": "Seguimiento reembolso",
             "body": response,
@@ -65,7 +65,7 @@ def draft_followup_email(
 def create_gmail_draft(
     service,
     draft_data: dict,
-    thread_id: Optional[str] = None,
+    thread_id: str | None = None,
     *,
     guard: MutationGuard,
 ) -> MutationResult:

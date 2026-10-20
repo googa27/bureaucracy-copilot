@@ -1,10 +1,11 @@
 """
 monthly_finance_summary.py -- Generate monthly finance digest from financial events.
 """
+
 import json
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "summarize_finance_monthly.md"
 
@@ -58,7 +59,7 @@ def generate_monthly_summary(month: str, aggregated: dict, client: Any) -> str:
     return message.content[0].text.strip()
 
 
-def save_monthly_summary(summary: str, month: str, output_dir: Optional[Path] = None) -> Path:
+def save_monthly_summary(summary: str, month: str, output_dir: Path | None = None) -> Path:
     """Save a generated monthly summary to disk."""
     if output_dir is None:
         output_dir = Path("~/.bureaucracy_copilot/summaries").expanduser()

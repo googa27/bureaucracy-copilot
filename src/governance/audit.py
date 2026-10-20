@@ -1,19 +1,22 @@
 """Append-only audit helpers with redacted payloads."""
+
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from .redaction import redact_mapping
 
 
-def append_audit_event(event: dict[str, Any], audit_path: str | Path | None = None) -> dict[str, Any]:
+def append_audit_event(
+    event: dict[str, Any], audit_path: str | Path | None = None
+) -> dict[str, Any]:
     """Return and optionally append a redacted audit event as NDJSON."""
     safe_event = redact_mapping(
         {
-            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "recorded_at": datetime.now(UTC).isoformat(),
             **event,
         }
     )

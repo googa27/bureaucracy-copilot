@@ -1,8 +1,10 @@
 """
 classifier.py — Classify Gmail messages using sender rules and LLM fallback.
 """
+
+import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -29,7 +31,7 @@ def _load_prompt() -> str:
     return _prompt_template
 
 
-def classify_by_rules(email: dict) -> Optional[dict]:
+def classify_by_rules(email: dict) -> dict | None:
     """
     Try to classify an email using deterministic sender rules.
     Returns a classification dict or None if no rule matched.
@@ -86,9 +88,8 @@ def classify_by_llm(email: dict, client: Any) -> dict:
     response_text = message.content[0].text.strip()
 
     try:
-        import json
         result = json.loads(response_text)
-    except Exception:
+    except json.JSONDecodeError:
         result = {
             "label": "BC/misc/unclassified",
             "category": "unknown",
@@ -101,7 +102,7 @@ def classify_by_llm(email: dict, client: Any) -> dict:
     return result
 
 
-def classify(email: dict, client: Optional[Any] = None) -> dict:
+def classify(email: dict, client: Any | None = None) -> dict:
     """
     Main classification entry point. Tries rules first, falls back to LLM.
     """

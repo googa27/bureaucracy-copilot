@@ -1,6 +1,7 @@
 """
 auth.py — Google OAuth2 authentication for Gmail and Calendar APIs.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -39,7 +40,9 @@ def get_credentials(scopes: Sequence[str] | None = None) -> Credentials:
                     f"Google credentials not found at {CREDENTIALS_PATH}.\n"
                     "Download credentials.json from Google Cloud Console and place it there."
                 )
-            flow = InstalledAppFlow.from_client_secrets_file(str(CREDENTIALS_PATH), requested_scopes)
+            flow = InstalledAppFlow.from_client_secrets_file(
+                str(CREDENTIALS_PATH), requested_scopes
+            )
             creds = flow.run_local_server(port=0)
 
         TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)

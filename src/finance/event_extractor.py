@@ -1,13 +1,15 @@
 """
 event_extractor.py — Extract structured financial events from bank/payment emails.
 """
+
 import json
 import re
 import uuid
-import yaml
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
+
+import yaml
+
 RULES_PATH = Path(__file__).parent.parent.parent / "rules" / "finance_classification.yaml"
 EVENTS_DIR = Path("~/.bureaucracy_copilot/finance_events").expanduser()
 
@@ -22,7 +24,7 @@ def _load_rules() -> dict:
     return _rules
 
 
-def extract_amount_clp(text: str) -> Optional[int]:
+def extract_amount_clp(text: str) -> int | None:
     """Extract a CLP amount from text. Returns integer pesos."""
     patterns = [
         r"\$\s*([\d\.]+)",
@@ -40,7 +42,7 @@ def extract_amount_clp(text: str) -> Optional[int]:
     return None
 
 
-def classify_finance_email(email: dict) -> Optional[dict]:
+def classify_finance_email(email: dict) -> dict | None:
     """Try to classify using deterministic finance rules."""
     rules = _load_rules()
     sender = email.get("from", "").lower()
@@ -69,11 +71,11 @@ def classify_finance_email(email: dict) -> Optional[dict]:
     return None
 
 
-def create_event(email: dict, classification: dict, amount_clp: Optional[int] = None) -> dict:
+def create_event(email: dict, classification: dict, amount_clp: int | None = None) -> dict:
     """Create a FinancialEvent object from an email."""
     return {
         "event_id": str(uuid.uuid4()),
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(UTC).replace(tzinfo=None).isoformat(),
         "email_id": email.get("id"),
         "email_date": email.get("date"),
         "subject": email.get("subject"),
@@ -81,9 +83,8 @@ def create_event(email: dict, classification: dict, amount_clp: Optional[int] = 
         "category": classification.get("category"),
         "subcategory": classification.get("subcategory"),
         "account": classification.get("account"),
-        "amount_clp": amount_clp or extract_amount_clp(
-            email.get("subject", "") + " " + email.get("body", "")[:500]
-        ),
+        "amount_clp": amount_clp
+        or extract_amount_clp(email.get("subject", "") + " " + email.get("body", "")[:500]),
         "currency": "CLP",
         "confidence": classification.get("confidence", 0.0),
         "method": classification.get("method"),
@@ -99,7 +100,7 @@ def save_event(event: dict) -> Path:
     return path
 
 
-def list_events(month: Optional[str] = None, category: Optional[str] = None) -> list[dict]:
+def list_events(month: str | None = None, category: str | None = None) -> list[dict]:
     """List financial events, optionally filtered by month (YYYY-MM) or category."""
     EVENTS_DIR.mkdir(parents=True, exist_ok=True)
     events = []
