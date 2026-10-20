@@ -63,7 +63,16 @@
       "src/outputs/.gitkeep",
       "src/summaries/.gitkeep",
       "src/utils/.gitkeep",
-      "src/governance/.gitkeep"
+      "src/governance/.gitkeep",
+      "src/utils/assets/prompts/build_claim_case.md",
+      "src/utils/assets/prompts/classify_email.md",
+      "src/utils/assets/prompts/draft_followup.md",
+      "src/utils/assets/prompts/summarize_finance_monthly.md",
+      "src/utils/assets/prompts/summarize_weekly_hygiene.md",
+      "src/utils/assets/rules/finance_classification.yaml",
+      "src/utils/assets/rules/gmail_sender_rules.yaml",
+      "src/utils/assets/rules/medical_routes.yaml",
+      "src/utils/assets/rules/summary_rules.yaml"
     ],
     "future_rule": "Any new Python package uses a src layout unless an evidence-backed exception is approved.",
     "hierarchy_policy": {
@@ -110,7 +119,11 @@
       "checker": "python3 scripts/check_ai_hierarchy_policy.py",
       "single_branch_runtime_directory": "review_required_above_minimum_descendant_modules",
       "two_branch_dominance_threshold": 0.95
-    }
+    },
+    "research_example_roots": [
+      "examples/impact_evaluation"
+    ],
+    "research_example_policy": "Public-synthetic, non-runtime examples may live under examples/ when isolated from src imports, optional dependencies are separately declared, and tests skip cleanly without the extra."
   },
   "limits": {
     "max_immediate_runtime_entries": 10,
@@ -137,6 +150,39 @@
         "evidence": "pyproject.toml/package.json/requirements and docs/ARCHITECTURE.md",
         "adapter_boundary": "repository public ports",
         "custom_code_reason": "domain semantics, composition, adapters, or genuinely missing algorithms only"
+      },
+      {
+        "capability": "optional causal-impact research example",
+        "selected": [
+          "NumPy",
+          "pandas",
+          "statsmodels"
+        ],
+        "alternatives": [
+          "hand-written OLS/logit/covariance estimators",
+          "adding a general causal-inference framework"
+        ],
+        "evidence": "Official PyPI metadata checked 2026-09-27: statsmodels 0.15.0 (2026-08-27), pandas 3.0.6 (2026-09-17), NumPy 2.5.3 (2026-09-06). Local execution evidence uses statsmodels 0.14.6, pandas 2.2.3, NumPy 2.3.5.",
+        "adapter_boundary": "examples/impact_evaluation only through the optional [impact] extra; src runtime must not import these packages for this capability.",
+        "custom_code_reason": "Custom code owns the synthetic DGP, identification design, SQL preparation, and diagnostic composition; OLS/WLS/logit/covariance estimation uses maintained statsmodels APIs.",
+        "maintenance_evidence": "Active releases and verified project metadata on PyPI as of 2026-09-27.",
+        "api_stability_evidence": "Uses public statsmodels formula OLS/WLS/Logit APIs, pandas DataFrame/read_sql_query APIs, NumPy RNG/array APIs, and Python stdlib sqlite3.",
+        "license_evidence": "statsmodels: BSD-3-Clause; pandas: BSD-3-Clause; NumPy: BSD-3-Clause plus permissive bundled-component licenses, per official PyPI metadata.",
+        "security_evidence": "GitHub Advisory Database spot-check on 2026-09-27 found no returned advisory applicable to the selected modern ranges; this is not a substitute for a reproducible lockfile vulnerability audit before production deployment.",
+        "oracle_or_reference_tests": [
+          "tests/integration/test_impact_evaluation.py",
+          "tests/integration/test_impact_evaluation_controls.py",
+          "tests/e2e/test_impact_cli.py"
+        ],
+        "inference_decision": {
+          "selected": "statsmodels OLS/WLS/logit and regression robust covariance; fixed supplied weights only",
+          "alternative": "TreatmentEffect joint GMM is not a drop-in user-clustered DiD estimator",
+          "limits": "No first-stage propensity uncertainty adjustment; coverage_validated=False for every estimate. Ordinary ATT weights, bounded for weighting only; raw fitted scores determine support.",
+          "references": [
+            "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.get_robustcov_results.html",
+            "https://www.statsmodels.org/stable/treatment.html"
+          ]
+        }
       },
       {
         "capability": "portfolio architecture bootstrap",
@@ -207,6 +253,56 @@
           ".github/workflows/ai-hierarchy-policy.yml",
           "scripts/selftest_ai_hierarchy_policy.py"
         ]
+      },
+      {
+        "capability": "repository lint, parsing errors, and UTC compatibility",
+        "selected": [
+          "existing locked Ruff",
+          "Python standard-library json and datetime",
+          "existing PyYAML safe loader"
+        ],
+        "alternatives": [
+          "custom parser or clock infrastructure",
+          "blanket exception catches",
+          "serialized timestamp migration"
+        ],
+        "evidence": "docs/ARCHITECTURE.md; no new dependencies; public maintained APIs already cover the boundaries",
+        "adapter_boundary": "existing response JSON decoders; policy CLI contract loader; legacy event/case/log serializers; UTC date/month defaults",
+        "custom_code_reason": "domain-specific fallback and compatibility composition only; no generic parser infrastructure",
+        "references": [
+          "https://docs.astral.sh/ruff/rules/blind-except/",
+          "https://docs.astral.sh/ruff/rules/call-datetime-utcnow/",
+          "https://docs.python.org/3.12/library/datetime.html#aware-and-naive-objects"
+        ],
+        "contracts": {
+          "json": "Catch JSONDecodeError only; preserve valid and malformed-JSON outputs; unexpected errors propagate; no schema change.",
+          "policy": "Catch OSError, UnicodeError, yaml.YAMLError, ContractShapeError only during contract loading; validate outside catch.",
+          "timestamps": "Use aware datetime.now(UTC); serialize legacy finance/case/log fields with tzinfo removed; audit retains +00:00; defaults use UTC dates/months.",
+          "review": "Dedicated human/security review and actual resulting-main verification outstanding; no hosted or provider acceptance claimed."
+        },
+        "oracle_or_reference_tests": [
+          "tests/unit/test_repository_quality.py",
+          "tests/unit/test_policy_error_boundary.py",
+          "tests/architecture/test_quality_workflow.py"
+        ]
+      },
+      {
+        "capability": "bundled default prompts and YAML rules",
+        "selected": [
+          "existing setuptools explicit package-data",
+          "Python stdlib importlib.resources.files and Traversable"
+        ],
+        "alternatives": [
+          "root data-files installation",
+          "filesystem-relative lookup",
+          "duplicated defaults"
+        ],
+        "evidence": "https://setuptools.pypa.io/en/latest/userguide/datafiles.html; https://docs.python.org/3.12/library/importlib.resources.html; docs/ARCHITECTURE.md",
+        "adapter_boundary": "src.utils.resources.default_resource owns the fixed read-only payload registry; domain consumers use Traversable.open/read_text with UTF-8",
+        "custom_code_reason": "Only application-specific names and rejection policy are custom; discovery/packaging/opening use maintained public APIs.",
+        "maintenance_evidence": "Official maintained setuptools and Python 3.12 documentation checked 2026-10-20; no dependency versions changed.",
+        "api_stability_evidence": "Public package-data and files/Traversable APIs; compatible with declared Python >=3.11.",
+        "license_evidence": "Setuptools MIT and Python PSF licenses; existing build tool and stdlib only."
       }
     ]
   },
@@ -267,16 +363,66 @@
     "commands": {
       "setup": "python -m pip install -r requirements.txt",
       "test": "python -m pytest -q",
-      "lint": "ruff check .",
-      "architecture": "python scripts/check_portfolio_architecture.py"
+      "lint": "python -m ruff check .",
+      "architecture": "python scripts/check_portfolio_architecture.py",
+      "impact_setup": "python -m pip install -e '.[impact]' pytest",
+      "impact_test": "python -m pytest -q tests/integration/test_impact_evaluation.py tests/integration/test_impact_evaluation_controls.py tests/e2e/test_impact_cli.py",
+      "impact_capabilities": "python -m examples.impact_evaluation.reminder_impact --capabilities",
+      "impact_json": "python -m examples.impact_evaluation.reminder_impact --format json",
+      "format": "python -m ruff format --check .",
+      "resource_test": "python -m pytest -q tests/integration/test_default_resources.py tests/architecture/test_resource_packaging.py",
+      "distribution_resources": "python scripts/check_distribution_resources.py dist/*.whl dist/*.tar.gz"
     },
     "runtime_coverage": [
       "tests/unit/test_governance_controls.py covers redaction, dry-run mutation proposals, audit events, and guarded Gmail mutators with fakes",
       "tests/unit/test_cli_import_boundaries.py covers the local cases CLI path without Anthropic/Google credentials or packages",
-      "tests/architecture/ covers the portfolio architecture and AI hierarchy policy gates"
+      "tests/architecture/ covers the portfolio architecture and AI hierarchy policy gates",
+      "tests/integration/test_impact_evaluation.py covers public-synthetic RCT recovery, observational selection bias, DiD/IPW recovery, propensity balance/overlap, tested SQLite preparation, and a deliberately violated parallel-trends failure mode when the optional impact dependencies are installed",
+      "Independent small NumPy contrast/HC1/cluster-sandwich oracles, disjoint raw-tail overlap, clipping metadata, SQL parity/connection closure, discovery without generation or writes, and strict JSON uncertainty labels.",
+      "tests/unit/test_repository_quality.py: real valid/invalid JSON compatibility, unexpected decoder error propagation, explicit UTC clocks with legacy naive serialization and UTC date/month boundaries",
+      "tests/unit/test_policy_error_boundary.py: expected contract load diagnostics and unexpected validation errors propagate",
+      "tests/architecture/test_quality_workflow.py: PyYAML-parsed actual run step invocations enforce complete Ruff gates after locked dependency installation",
+      "tests/integration/test_default_resources.py retains nine original hashes plus corrected medical quoting provenance; synthetic prompt and validated canonical YAML consumers are exercised."
     ],
-    "ci_workflow": ".github/workflows/portfolio-architecture.yml",
-    "mirror_source": "where pertinent"
+    "ci_workflow": ".github/workflows/portfolio-architecture.yml installs the Python 3.12 hash lock, runs complete repository Ruff lint/format gates, architecture and the full configured synthetic/governance suite, exercises capability/JSON contracts, and builds wheel/sdist. Configuration is not hosted execution evidence. Issue12 adds archive byte comparison and a resource-focused normal-wheel test from a source-free temporary cwd; this focused check does not substitute for the full installed/copied acceptance profile.",
+    "mirror_source": "where pertinent",
+    "impact_profiles": {
+      "configured_gate": "Python 3.12; source applicability remains Python 3.11+; other Python versions NOT_RUN in this change",
+      "installed_and_copy_artifact": "Fresh normally installed core wheel plus a separate copied public-synthetic example; examples remain deliberately excluded from the runtime wheel. Explicit immutable hash-locked third-party reuse is permitted, with origin/version and dependency-coherence proof; do not call shared dependencies an independent reinstall.",
+      "locked_setup": "python -m pip install --require-hashes --only-binary=:all: -r requirements-impact.lock; python -m pip install --no-deps --no-build-isolation -e .",
+      "lock_generation": "Header in requirements-impact.lock records uv compile inputs, impact/dev extras, governance constraint, Python 3.12/Linux x86_64 and hashes. Other platforms/minors are not locked by this profile.",
+      "workflow": "Expanded source/capability/build commands are configured in portfolio-architecture.yml. Configuration is not hosted execution evidence. Full acceptance remains gated by issue10/11, actual resulting-main verification and repository human/security review."
+    },
+    "security_tooling_profile": {
+      "zizmor": {
+        "required_command": "zizmor --offline --min-severity medium .",
+        "installation": "Authorized compatible Zizmor tooling may be separate from the immutable locked research environment; identify it in exact-revision execution evidence.",
+        "result": "Per-attempt evidence, not a permanent source declaration of PASS or NOT_RUN.",
+        "partial_checks": "pinact and policy self-tests do not substitute for Zizmor."
+      }
+    },
+    "resource_packaging": {
+      "canonical_root": "src/utils/assets",
+      "api": "Existing *_PATH constants are now Traversable handles, supporting read_text/open; pathlib-only operations are not supported. Private writable state remains pathlib-based.",
+      "acceptance": "Final exact wheel/sdist byte checks and source-free normal-installed full runtime/copied research suites remain required separately from source gates.",
+      "semantic_defect_owner": "https://github.com/googa27/bureaucracy-copilot/issues/13",
+      "known_preexisting_limitations": [
+        "Issue13 repairs syntax and rule consumers; full FinancialEvent/MedicalCase persistence schema acceptance remains outside this change."
+      ]
+    },
+    "rule_contracts": {
+      "reference": "docs/rule-contracts.md",
+      "providers": false,
+      "canonical_shapes": [
+        "gmail_sender_rules",
+        "finance_classification",
+        "medical_routes",
+        "summary_rules"
+      ],
+      "validation": "PyYAML safe_load then checked Draft7Validator; required fields and closed objects; no legacy shape guessing",
+      "tests": "tests/integration/test_rule_contracts.py; tests/architecture/test_rule_contract_fitness.py",
+      "acceptance": "Source-only checks; exact-commit security/build/installed archives, independent review, real human/security approval and main verification pending"
+    }
   },
   "data": {
     "consumes_data": true,
@@ -309,7 +455,20 @@
     ],
     "flow": "source registry -> typed acquisition -> classification/extraction -> redacted mutation proposal -> human approval gate -> audited side effect or local governed output",
     "storage_and_replay": "Immutable raw/content-addressed inputs; canonical typed products; idempotent replay by source identity and effective/vintage time where applicable.",
-    "quality_and_lineage": "Validate schema, grain, units, classification, lineage, freshness, licence, and content identity before consumption; fail closed on missing evidence."
+    "quality_and_lineage": "Validate schema, grain, units, classification, lineage, freshness, licence, and content identity before consumption; fail closed on missing evidence.",
+    "public_synthetic_examples": [
+      "examples/impact_evaluation generates its own synthetic reminder outcomes and must not read Gmail, Calendar, or local private state."
+    ],
+    "impact_example": {
+      "classification": "public_synthetic_only",
+      "grain": "user_period",
+      "outcome_unit": "days",
+      "seed": 7,
+      "lineage": "NumPy RNG -> synthetic events -> in-memory SQLite aggregation -> statsmodels -> report",
+      "limit_rows_per_panel": 12000,
+      "providers": false,
+      "support": "raw_propensity; bounded propensity used only for weights; clipping count and fraction reported"
+    }
   },
   "governance": {
     "architecture_source": "docs/ARCHITECTURE.yaml",
@@ -392,5 +551,15 @@
       "write_permission_exceptions": []
     }
   },
-  "exceptions": []
+  "exceptions": [
+    {
+      "rule": "research_example_outside_src",
+      "path": "examples/impact_evaluation",
+      "reason": "Keep an interview-sized public-synthetic causal-impact research artifact isolated from the private-data application runtime and optional scientific dependencies.",
+      "owner": "repository maintainer",
+      "risk": "The example could drift into runtime coupling or be mistaken for production experimentation capability.",
+      "accepted_ceiling": 1,
+      "refactoring_trigger": "Move supported causal-impact code under src only if it becomes an application capability consumed by runtime code, with production data/governance contracts and dedicated architecture tests."
+    }
+  ]
 }

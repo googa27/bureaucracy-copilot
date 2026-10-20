@@ -113,4 +113,4 @@ The system infers the likely route based on:
 
 ## Rule File
 
-Routes are configured in `rules/medical_routes.yaml`.
+Routes are configured in `src/utils/assets/rules/medical_routes.yaml`.

@@ -8,12 +8,14 @@ Usage:
     python -m src.main --run monthly --month YYYY-MM
     python -m src.main --run cases               # List open cases
 """
+
 from __future__ import annotations
 
 import argparse
 import importlib
 import json
 import sys
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +29,9 @@ logger = get_logger(__name__)
 DEFAULT_AUDIT_LOG = Path("~/.bureaucracy_copilot/audit.ndjson")
 
 
-def run_classify(cfg: dict[str, Any], gmail: Any, anthropic_client: Any, guard: MutationGuard) -> None:
+def run_classify(
+    cfg: dict[str, Any], gmail: Any, anthropic_client: Any, guard: MutationGuard
+) -> None:
     """Fetch unclassified emails, classify, and plan/apply labels with approval controls."""
     from src.classification.classifier import classify
     from src.finance.event_extractor import classify_finance_email, create_event, save_event
@@ -60,7 +64,13 @@ def run_classify(cfg: dict[str, Any], gmail: Any, anthropic_client: Any, guard: 
                 label_name=label_name,
             )
             if label_result.status == "planned":
-                print(json.dumps({"dry_run": redact_mapping(label_result.to_dict())}, indent=2, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        {"dry_run": redact_mapping(label_result.to_dict())},
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+                )
 
         if result.get("action") == "archive":
             archive_result = archive_message(
@@ -70,7 +80,13 @@ def run_classify(cfg: dict[str, Any], gmail: Any, anthropic_client: Any, guard: 
                 subject=email.get("subject"),
             )
             if archive_result.status == "planned":
-                print(json.dumps({"dry_run": redact_mapping(archive_result.to_dict())}, indent=2, ensure_ascii=False))
+                print(
+                    json.dumps(
+                        {"dry_run": redact_mapping(archive_result.to_dict())},
+                        indent=2,
+                        ensure_ascii=False,
+                    )
+                )
 
         classified += 1
         safe_email = redact_mapping(email)
@@ -91,7 +107,11 @@ def run_classify(cfg: dict[str, Any], gmail: Any, anthropic_client: Any, guard: 
 def run_weekly(cfg: dict[str, Any], anthropic_client: Any) -> None:
     """Generate and print the weekly summary."""
     from src.medical.case_tracker import list_cases
-    from src.summaries.weekly_summary import collect_weekly_data, generate_weekly_summary, save_summary
+    from src.summaries.weekly_summary import (
+        collect_weekly_data,
+        generate_weekly_summary,
+        save_summary,
+    )
 
     cases = list_cases()
     data = collect_weekly_data(cases, emails_classified=0, emails_pending=0)
@@ -152,8 +172,10 @@ def main() -> None:
     parser.add_argument("--approval-reason", default=None, help="Why mutation mode is approved")
     parser.add_argument("--audit-log", default=str(DEFAULT_AUDIT_LOG), help="NDJSON audit path")
     args = parser.parse_args()
-    if args.run == "classify" and args.approve_mutations and (
-        not args.approved_by or not args.approval_reason
+    if (
+        args.run == "classify"
+        and args.approve_mutations
+        and (not args.approved_by or not args.approval_reason)
     ):
         parser.error("--approve-mutations requires --approved-by and --approval-reason")
 
@@ -171,7 +193,7 @@ def main() -> None:
     if args.run == "monthly":
         from datetime import datetime
 
-        month = args.month or datetime.utcnow().strftime("%Y-%m")
+        month = args.month or datetime.now(UTC).strftime("%Y-%m")
         run_monthly(cfg, anthropic_client, month)
         return
 

@@ -1,8 +1,9 @@
 """Typed records for dry-run, approval, and audit decisions."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
@@ -21,7 +22,7 @@ class MutationProposal:
     required_scopes: tuple[str, ...] = ()
     classification: Classification = "private"
     proposal_id: str = field(default_factory=lambda: uuid4().hex)
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

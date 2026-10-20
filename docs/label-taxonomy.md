@@ -87,7 +87,7 @@ Gmail labels are organized in a hierarchical namespace. All custom labels use th
 
 ## Gmail Filter Rules
 
-Filters are defined in `rules/gmail_sender_rules.yaml` and map sender domains / patterns to labels.
+Filters are defined in `src/utils/assets/rules/gmail_sender_rules.yaml` and map sender domains / patterns to labels.
 
 Examples:
 - `bicevidavida.cl` → `BC/Records/Medical/Insurance`

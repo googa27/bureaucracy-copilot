@@ -12,7 +12,7 @@ The system generates three types of automated summaries to keep the user operati
 
 **Delivery:** Email to user, or Markdown file
 
-**Template:** `prompts/summarize_weekly_hygiene.md`
+**Template:** `src/utils/assets/prompts/summarize_weekly_hygiene.md`
 
 ### Sections
 
@@ -87,7 +87,7 @@ UNSUBSCRIBE SUGGESTIONS
 
 **Cadence:** Monthly (first Monday of month)
 
-**Template:** `prompts/summarize_finance_monthly.md`
+**Template:** `src/utils/assets/prompts/summarize_finance_monthly.md`
 
 ### Sections
 
@@ -158,4 +158,4 @@ BENEFITS NOT USED
 
 ## Prompt Templates
 
-See `prompts/` directory for the LLM prompt templates used to generate summaries.
+See `src/utils/assets/prompts/` directory for the LLM prompt templates used to generate summaries.

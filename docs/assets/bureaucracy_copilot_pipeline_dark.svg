@@ -42,7 +42,7 @@
   <text x="70" y="193" class="muted">Rules, prompts, schemas, and state</text>
 
   <rect x="70" y="225" width="210" height="62" class="card cyan" />
-  <text x="92" y="253" class="text">rules/*.yaml</text>
+  <text x="92" y="253" class="text">src/utils/assets/rules/*.yaml</text>
   <text x="92" y="275" class="muted">sender + routing logic</text>
 
   <rect x="70" y="310" width="210" height="62" class="card blue" />
@@ -50,7 +50,7 @@
   <text x="92" y="360" class="muted">case/event/reminder shapes</text>
 
   <rect x="70" y="395" width="210" height="62" class="card purple" />
-  <text x="92" y="423" class="text">prompts/*.md</text>
+  <text x="92" y="423" class="text">src/utils/assets/prompts/*.md</text>
   <text x="92" y="445" class="muted">LLM classification/summaries</text>
 
   <rect x="70" y="480" width="210" height="86" class="card green" />

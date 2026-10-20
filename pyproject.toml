@@ -22,6 +22,11 @@ dev = [
   "pytest>=8.0.0",
   "ruff>=0.5.0",
 ]
+impact = [
+  "numpy>=2.2,<3.0",
+  "pandas>=2.2,<3.1",
+  "statsmodels>=0.14.6,<0.16",
+]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
@@ -36,3 +41,16 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.setuptools.package-data]
+"src.utils" = [
+  "assets/prompts/build_claim_case.md",
+  "assets/prompts/classify_email.md",
+  "assets/prompts/draft_followup.md",
+  "assets/prompts/summarize_finance_monthly.md",
+  "assets/prompts/summarize_weekly_hygiene.md",
+  "assets/rules/finance_classification.yaml",
+  "assets/rules/gmail_sender_rules.yaml",
+  "assets/rules/medical_routes.yaml",
+  "assets/rules/summary_rules.yaml",
+]

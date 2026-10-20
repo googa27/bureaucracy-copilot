@@ -1,0 +1,4 @@
+# Build-only tooling for the explicit Python3.12/Linux research verification profile.
+build>=1.2
+setuptools>=68
+wheel

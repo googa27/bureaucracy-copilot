@@ -79,10 +79,56 @@ Mutation architecture: classifiers/extractors propose Gmail/Calendar changes; `s
 
 - Setup: `python -m pip install -r requirements.txt`
 - Tests: `python -m pytest -q`
-- Lint/format: `ruff check .`
+- Lint: `python -m ruff check .`
+- Format: `python -m ruff format --check .`
 - Portfolio architecture: `python scripts/check_portfolio_architecture.py`
 - Governance setup: `python3 -m pip install -r requirements-architecture.txt`
 - AI/hierarchy policy: `python3 scripts/check_ai_hierarchy_policy.py`
 
 If a command is declared unavailable, the activation trigger and replacement command belong in `docs/ARCHITECTURE.yaml`; do not fabricate successful output.
 <!-- PORTFOLIO-CONSTITUTION:END -->
+
+## Issue #10: synthetic impact contract
+
+The public-synthetic example preserves raw fitted propensity support separately from bounded ordinary ATT weighting scores and reports clipping count/fraction. Weighted DiD uncertainty is conditional on supplied weights, without first-stage adjustment; coverage is unvalidated. See [example API and limits](examples/impact_evaluation/README.md).
+
+```bash
+python -m examples.impact_evaluation.reminder_impact --capabilities
+python -m examples.impact_evaluation.reminder_impact --format json
+python -m pytest -q tests/integration/test_impact_evaluation.py tests/integration/test_impact_evaluation_controls.py tests/e2e/test_impact_cli.py
+```
+
+These CPU-only commands use generated public-synthetic user-period data (days; seed 7; 6400 rows per design; 12000-row panel cap). No provider access is involved. Python 3.12/Linux x86_64 is the hash-locked configured gate. Use `requirements-impact.lock` with `--require-hashes --only-binary=:all:`; its header records generation inputs. PR #9 and issues #10/#11 track executed evidence and remaining acceptance, including installed/copied origins and dedicated human/security review; configuration alone is not proof.
+
+
+## Issue #11: repository quality gates
+
+The Python 3.12 hash-locked CI job runs the complete Ruff lint and format gates
+above after dependency installation. `python -m pytest -q` includes executable
+workflow invocation checks and synthetic JSON error/UTC compatibility regressions.
+Expected JSON decode failures retain legacy fallback outputs; unexpected failures
+propagate. Legacy event/case/log timestamps remain naive UTC ISO strings; audit
+records remain offset-qualified. See `docs/ARCHITECTURE.md` for boundary contracts.
+Human/security review and verification on actual resulting main remain outstanding;
+local gates and configured CI are not evidence of those approvals or hosted success.
+
+
+## Issue #12: bundled defaults
+
+The single canonical default source is `src/utils/assets/prompts/` (five templates)
+and `src/utils/assets/rules/` (four YAML files). Explicit setuptools package-data
+includes them in wheel and sdist. `src.utils.resources.default_resource` rejects
+names outside the fixed registry and returns an importlib.resources Traversable;
+consumers use UTF-8 `read_text`/`open`, including non-filesystem loaders. Existing
+`PROMPT_PATH`, `RULES_PATH`, and `ROUTES_PATH` constants are resource handles now;
+pathlib-only operations and writes through those constants are unsupported.
+Private state paths and mutation approval requirements are unchanged.
+
+Issue #13 corrects only the malformed medical description quoting and reconciles
+consumers with the declared rule shapes. All nine original hashes remain in
+`tests/integration/test_default_resources.py`, alongside the corrected medical
+hash and a reversible original-byte witness. The five prompts and three other
+YAML defaults remain byte identical. See [rule contracts](docs/rule-contracts.md)
+for typed proposal APIs, matching policy, metadata retention and limits.
+Source tests do not certify exact installed artifacts, human/security approval,
+whole medical/financial schemas, or resulting main.

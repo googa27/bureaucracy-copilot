@@ -126,7 +126,7 @@ create_event(
     description="Case ID: case_20251201_ABCD\nStatus: submitted\nAmount: CLP 45,000\nNext action: Check portal",
     start=datetime.now() + timedelta(days=7),
     duration_minutes=15,
-    reminders=[30]
+    reminders=[30],
 )
 
 # Create recurring review
@@ -134,7 +134,7 @@ create_recurring_event(
     summary="[BC] Weekly bureaucracy review",
     rrule="FREQ=WEEKLY;BYDAY=MO",
     start=next_monday_9am(),
-    duration_minutes=30
+    duration_minutes=30,
 )
 ```
 

@@ -341,17 +341,6 @@ bureaucracy-copilot/
 │   ├── financial_event.schema.json
 │   ├── reminder.schema.json
 │   └── sender_rule.schema.json
-├── rules/
-│   ├── gmail_sender_rules.yaml
-│   ├── medical_routes.yaml
-│   ├── finance_classification.yaml
-│   └── summary_rules.yaml
-├── prompts/
-│   ├── classify_email.md
-│   ├── summarize_weekly_hygiene.md
-│   ├── summarize_finance_monthly.md
-│   ├── build_claim_case.md
-│   └── draft_followup.md
 ├── src/
 │   ├── ingestion/
 │   ├── classification/
@@ -361,6 +350,18 @@ bureaucracy-copilot/
 │   ├── summaries/
 │   ├── outputs/
 │   └── utils/
+│       └── assets/
+│           ├── rules/
+│           │   ├── gmail_sender_rules.yaml
+│           │   ├── medical_routes.yaml
+│           │   ├── finance_classification.yaml
+│           │   └── summary_rules.yaml
+│           └── prompts/
+│               ├── classify_email.md
+│               ├── summarize_weekly_hygiene.md
+│               ├── summarize_finance_monthly.md
+│               ├── build_claim_case.md
+│               └── draft_followup.md
 ├── notebooks/
 │   ├── reimbursement_exploration.ipynb
 │   └── finance_exploration.ipynb

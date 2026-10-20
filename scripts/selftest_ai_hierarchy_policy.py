@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Self-check the additive AI, hierarchy, and workflow governance gate."""
 
 from __future__ import annotations
