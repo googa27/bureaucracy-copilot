@@ -382,7 +382,7 @@
       "tests/unit/test_repository_quality.py: real valid/invalid JSON compatibility, unexpected decoder error propagation, explicit UTC clocks with legacy naive serialization and UTC date/month boundaries",
       "tests/unit/test_policy_error_boundary.py: expected contract load diagnostics and unexpected validation errors propagate",
       "tests/architecture/test_quality_workflow.py: PyYAML-parsed actual run step invocations enforce complete Ruff gates after locked dependency installation",
-      "tests/integration/test_default_resources.py pins all nine pre-migration byte hashes, exercises all five prompt consumers with synthetic clients and real YAML loaders; medical_routes.yaml retains its pre-existing ParserError, and rule-schema mismatch is unchanged."
+      "tests/integration/test_default_resources.py retains nine original hashes plus corrected medical quoting provenance; synthetic prompt and validated canonical YAML consumers are exercised."
     ],
     "ci_workflow": ".github/workflows/portfolio-architecture.yml installs the Python 3.12 hash lock, runs complete repository Ruff lint/format gates, architecture and the full configured synthetic/governance suite, exercises capability/JSON contracts, and builds wheel/sdist. Configuration is not hosted execution evidence. Issue12 adds archive byte comparison and a resource-focused normal-wheel test from a source-free temporary cwd; this focused check does not substitute for the full installed/copied acceptance profile.",
     "mirror_source": "where pertinent",
@@ -407,9 +407,21 @@
       "acceptance": "Final exact wheel/sdist byte checks and source-free normal-installed full runtime/copied research suites remain required separately from source gates.",
       "semantic_defect_owner": "https://github.com/googa27/bureaucracy-copilot/issues/13",
       "known_preexisting_limitations": [
-        "medical_routes.yaml has invalid YAML at line 24; original bytes and ParserError preserved",
-        "Gmail and finance rule schemas differ from consumer expectations; no semantic repair in packaging issue12"
+        "Issue13 repairs syntax and rule consumers; full FinancialEvent/MedicalCase persistence schema acceptance remains outside this change."
       ]
+    },
+    "rule_contracts": {
+      "reference": "docs/rule-contracts.md",
+      "providers": false,
+      "canonical_shapes": [
+        "gmail_sender_rules",
+        "finance_classification",
+        "medical_routes",
+        "summary_rules"
+      ],
+      "validation": "PyYAML safe_load then checked Draft7Validator; required fields and closed objects; no legacy shape guessing",
+      "tests": "tests/integration/test_rule_contracts.py; tests/architecture/test_rule_contract_fitness.py",
+      "acceptance": "Source-only checks; exact-commit security/build/installed archives, independent review, real human/security approval and main verification pending"
     }
   },
   "data": {

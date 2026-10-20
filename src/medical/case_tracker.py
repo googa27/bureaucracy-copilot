@@ -4,11 +4,13 @@ case_tracker.py — Build and track medical reimbursement cases from classified 
 
 import json
 import uuid
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from src.utils.resources import default_resource
+from src.utils.rule_contracts import load_rule_document, matches
 
 PROMPT_PATH = default_resource("prompts/build_claim_case.md")
 ROUTES_PATH = default_resource("rules/medical_routes.yaml")
@@ -20,27 +22,48 @@ _route_rules: dict | None = None
 def _load_route_rules() -> dict:
     global _route_rules
     if _route_rules is None:
-        import yaml
-
-        with ROUTES_PATH.open("r", encoding="utf-8") as f:
-            _route_rules = yaml.safe_load(f)
+        _route_rules = load_rule_document(ROUTES_PATH, "medical_routes")
     return _route_rules
 
 
-def infer_insurer(email: dict) -> str | None:
-    """Infer the relevant insurer from sender domain or subject keywords."""
+class RouteDecision(TypedDict):
+    route: str
+    confidence: float
+    signals: list[dict]
+    policy: dict
+
+
+def propose_route(email: dict[str, str]) -> RouteDecision:
+    """Pure route proposal, never coverage/eligibility or submission advice.
+
+    All matching signals are retained; esencial+bicevida yields combined.
+    Otherwise the first YAML signal wins. Expense modifiers remain metadata.
+    """
     rules = _load_route_rules()
-    sender = email.get("from", "").lower()
-    subject = email.get("subject", "").lower()
-    body = email.get("body", "").lower()
-    text = sender + " " + subject + " " + body[:200]
+    signals = [r for r in rules["routes"] if matches(r["pattern_type"], r["pattern"], email)]
+    routes = {r["route"] for r in signals}
+    combined = {"esencial", "bicevida"}.issubset(routes)
+    route = (
+        "combined" if combined else signals[0]["route"] if signals else rules["fallback"]["route"]
+    )
+    confidence = (
+        min(r["confidence"] for r in signals if r["route"] in ("esencial", "bicevida"))
+        if combined
+        else signals[0]["confidence"]
+        if signals
+        else rules["fallback"]["confidence"]
+    )
+    return {
+        "route": route,
+        "confidence": confidence,
+        "signals": deepcopy(signals),
+        "policy": deepcopy(rules),
+    }
 
-    for insurer_rule in rules.get("insurers", []):
-        for trigger in insurer_rule.get("triggers", []):
-            if trigger.lower() in text:
-                return insurer_rule["name"]
 
-    return None
+def infer_insurer(email: dict[str, str]) -> str:
+    """Compatibility alias returning the named proposed route, including unknown."""
+    return propose_route(email)["route"]
 
 
 def extract_case_fields(email: dict, client: Any) -> dict:

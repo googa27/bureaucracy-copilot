@@ -5,12 +5,12 @@ event_extractor.py — Extract structured financial events from bank/payment ema
 import json
 import re
 import uuid
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 
-import yaml
-
 from src.utils.resources import default_resource
+from src.utils.rule_contracts import RuleDecision, load_rule_document, matches
 
 RULES_PATH = default_resource("rules/finance_classification.yaml")
 EVENTS_DIR = Path("~/.bureaucracy_copilot/finance_events").expanduser()
@@ -21,8 +21,7 @@ _rules: dict | None = None
 def _load_rules() -> dict:
     global _rules
     if _rules is None:
-        with RULES_PATH.open("r", encoding="utf-8") as f:
-            _rules = yaml.safe_load(f)
+        _rules = load_rule_document(RULES_PATH, "finance_classification")
     return _rules
 
 
@@ -44,32 +43,40 @@ def extract_amount_clp(text: str) -> int | None:
     return None
 
 
-def classify_finance_email(email: dict) -> dict | None:
-    """Try to classify using deterministic finance rules."""
-    rules = _load_rules()
-    sender = email.get("from", "").lower()
-    subject = email.get("subject", "").lower()
-    body = email.get("body", "").lower()
+class FinanceDecision(RuleDecision):
+    source: str
+    event_type: str
+    account_source: str
+    account: str
+    category: str | None
+    extraction: dict
+    archive: bool
+    label: str
 
-    for rule in rules.get("rules", []):
-        for domain in rule.get("domains", []):
-            if domain.lower() in sender:
-                return {
-                    "category": rule["category"],
-                    "subcategory": rule.get("subcategory", ""),
-                    "account": rule.get("account", ""),
-                    "confidence": 1.0,
-                    "method": "rule",
-                }
-        for keyword in rule.get("subject_keywords", []):
-            if keyword.lower() in subject or keyword.lower() in body[:200]:
-                return {
-                    "category": rule["category"],
-                    "subcategory": rule.get("subcategory", ""),
-                    "account": rule.get("account", ""),
-                    "confidence": 0.85,
-                    "method": "rule_keyword",
-                }
+
+def classify_finance_email(email: dict[str, str]) -> FinanceDecision | None:
+    """Propose declared metadata; domains before subject keywords, then YAML order.
+
+    No extraction or financial action is performed. Missing category remains None.
+    """
+    rules = _load_rules()["classification_rules"]
+    for kind in ("sender_domain", "subject_keyword"):
+        for rule in rules:
+            for pattern in rule["patterns"]:
+                if kind in pattern and matches(kind, pattern[kind], email):
+                    return {
+                        "source": rule["source"],
+                        "event_type": rule["event_type"],
+                        "account_source": rule["account_source"],
+                        "account": rule["account_source"],
+                        "category": rule.get("category"),
+                        "extraction": deepcopy(rule["extraction"]),
+                        "archive": rule["archive"],
+                        "label": rule["label"],
+                        "rule": deepcopy(rule),
+                        "confidence": 0.9 if kind == "sender_domain" else 0.85,
+                        "method": "rule" if kind == "sender_domain" else "rule_keyword",
+                    }
     return None
 
 

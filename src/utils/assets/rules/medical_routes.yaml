@@ -21,7 +21,7 @@ routes:
     confidence: 0.7
 
   - signal: bono_keyword
-    description: 'Bono' or 'bonificación' (isapre reimbursement terms)
+    description: "'Bono' or 'bonificación' (isapre reimbursement terms)"
     pattern_type: keyword
     pattern: "bono|bonificación|bonificacion"
     route: esencial

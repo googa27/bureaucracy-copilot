@@ -3,11 +3,11 @@ classifier.py — Classify Gmail messages using sender rules and LLM fallback.
 """
 
 import json
+from copy import deepcopy
 from typing import Any
 
-import yaml
-
 from src.utils.resources import default_resource
+from src.utils.rule_contracts import RuleDecision, load_rule_document, matches
 
 RULES_PATH = default_resource("rules/gmail_sender_rules.yaml")
 PROMPT_PATH = default_resource("prompts/classify_email.md")
@@ -19,9 +19,7 @@ _prompt_template: str | None = None
 def _load_rules() -> list[dict]:
     global _rules
     if _rules is None:
-        with RULES_PATH.open("r", encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-        _rules = data.get("rules", [])
+        _rules = load_rule_document(RULES_PATH, "gmail_sender_rules")["rules"]
     return _rules
 
 
@@ -32,38 +30,37 @@ def _load_prompt() -> str:
     return _prompt_template
 
 
-def classify_by_rules(email: dict) -> dict | None:
+class SenderDecision(RuleDecision):
+    labels: list[str]
+    label: str
+    classification: str | None
+    archive: bool
+    category: str | None
+    action: str
+    matched_rule: str
+
+
+def classify_by_rules(email: dict[str, str]) -> SenderDecision | None:
+    """Propose first active YAML match, preserving all labels and metadata.
+
+    Compatibility label is the first label; category aliases classification.
+    Confidence is a heuristic, not authenticated sender evidence.
     """
-    Try to classify an email using deterministic sender rules.
-    Returns a classification dict or None if no rule matched.
-    """
-    rules = _load_rules()
-    sender = email.get("from", "").lower()
-    subject = email.get("subject", "").lower()
-
-    for rule in rules:
-        for domain in rule.get("domains", []):
-            if domain.lower() in sender:
-                return {
-                    "label": rule["label"],
-                    "category": rule.get("category", ""),
-                    "action": rule.get("action", "label"),
-                    "confidence": 1.0,
-                    "method": "rule",
-                    "matched_rule": rule.get("name", domain),
-                }
-
-        for keyword in rule.get("subject_keywords", []):
-            if keyword.lower() in subject:
-                return {
-                    "label": rule["label"],
-                    "category": rule.get("category", ""),
-                    "action": rule.get("action", "label"),
-                    "confidence": 0.9,
-                    "method": "rule_keyword",
-                    "matched_rule": rule.get("name", keyword),
-                }
-
+    for rule in _load_rules():
+        if rule.get("active", True) and matches(rule["pattern_type"], rule["pattern"], email):
+            keyword = rule["pattern_type"] == "subject_keyword"
+            return {
+                "labels": list(rule["labels"]),
+                "label": rule["labels"][0],
+                "classification": rule.get("classification"),
+                "category": rule.get("classification"),
+                "archive": rule.get("archive", False),
+                "action": "label",
+                "confidence": rule.get("confidence_boost", 0.9),
+                "method": "rule_keyword" if keyword else "rule",
+                "matched_rule": rule["rule_id"],
+                "rule": deepcopy(rule),
+            }
     return None
 
 

@@ -119,15 +119,14 @@ consumers use UTF-8 `read_text`/`open`, including non-filesystem loaders. Existi
 pathlib-only operations and writes through those constants are unsupported.
 Private state paths and mutation approval requirements are unchanged.
 
-Byte preservation includes existing limitations: `medical_routes.yaml` line 24
-is invalid YAML and still raises PyYAML ParserError; Gmail/finance rule schemas
-also differ from their current consumers. Packaging tests retain these outcomes,
-not semantic repairs. Those runtime schema/routing defects are separately owned by
-[issue #13](https://github.com/googa27/bureaucracy-copilot/issues/13), not accepted
-functionality. All nine original hashes and synthetic resource-backed API
-checks live in `tests/integration/test_default_resources.py`; package selection
-fitness lives in `tests/architecture/test_resource_packaging.py`. Source passes
-do not certify final installed artifacts, human/security approval, or main.
+Issue #13 corrects only the malformed medical description quoting and reconciles
+consumers with the declared rule shapes. All nine original hashes remain in
+`tests/integration/test_default_resources.py`, alongside the corrected medical
+hash and a reversible original-byte witness. The five prompts and three other
+YAML defaults remain byte identical. See [rule contracts](rule-contracts.md)
+for typed proposal APIs, matching policy, metadata retention and limits.
+Source tests do not certify exact installed artifacts, human/security approval,
+whole medical/financial schemas, or resulting main.
 
 The build contract follows [setuptools package-data](https://setuptools.pypa.io/en/latest/userguide/datafiles.html)
 and [Python resource access](https://docs.python.org/3.12/library/importlib.resources.html).

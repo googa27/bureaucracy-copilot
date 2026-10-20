@@ -6,7 +6,7 @@ from importlib.resources import files
 import pytest
 import yaml
 
-DEFAULT_HASHES = {
+ORIGINAL_DEFAULT_HASHES = {
     "prompts/build_claim_case.md": "55c24f24fed8d0a6b413bfb774775db908611c71a5b2b296d070bfa188c1a0d8",
     "prompts/classify_email.md": "98c5f199ced81ff008330c4266afcefecaf92c935b5a1099b0359960e44dcf81",
     "prompts/draft_followup.md": "62247ed0a806be0ae8988e36fcbb8dc29d4aba1c63b35210b13e30562e42cb67",
@@ -18,6 +18,27 @@ DEFAULT_HASHES = {
     "rules/summary_rules.yaml": "325d94156aed7a1d68ac0051c3a37c15742640dc0ac52c74fead5923b3ab3e8f",
 }
 
+# Issue13 changes only the malformed medical description quoting.
+DEFAULT_HASHES = {
+    **ORIGINAL_DEFAULT_HASHES,
+    "rules/medical_routes.yaml": "f0654d4b51434120c6c10fa7e4ce6bbd656f9acf2f637938ed3750e3a9537845",
+}
+
+
+def test_medical_original_provenance():
+    text = default_medical = (
+        files("src.utils").joinpath("assets/rules/medical_routes.yaml").read_text(encoding="utf-8")
+    )
+    original = text.replace(
+        "description: \"'Bono' or 'bonificación' (isapre reimbursement terms)\"",
+        "description: 'Bono' or 'bonificación' (isapre reimbursement terms)",
+    )
+    assert original != default_medical
+    assert (
+        hashlib.sha256(original.encode()).hexdigest()
+        == ORIGINAL_DEFAULT_HASHES["rules/medical_routes.yaml"]
+    )
+
 
 @pytest.mark.parametrize("name,digest", DEFAULT_HASHES.items())
 def test_packaged_defaults_preserve_original_bytes(name, digest):
@@ -25,11 +46,7 @@ def test_packaged_defaults_preserve_original_bytes(name, digest):
     assert hashlib.sha256(resource.read_bytes()).hexdigest() == digest
     text = resource.read_text(encoding="utf-8")
     if name.endswith(".yaml"):
-        if name == "rules/medical_routes.yaml":
-            with pytest.raises(yaml.parser.ParserError):
-                yaml.safe_load(text)
-        else:
-            assert isinstance(yaml.safe_load(text), dict)
+        assert isinstance(yaml.safe_load(text), dict)
     else:
         assert text.strip()
 
@@ -70,13 +87,13 @@ def test_missing_default_retains_file_not_found(monkeypatch, tmp_path):
         ),
     ],
 )
-def test_real_prompt_read_paths(module_name, function, resource, returns_json):
+def test_real_prompt_read_paths(module_name, function, resource, returns_json, monkeypatch):
     from importlib import import_module
     from types import SimpleNamespace
 
     module = import_module(module_name)
     if hasattr(module, "_prompt_template"):
-        module._prompt_template = None
+        monkeypatch.setattr(module, "_prompt_template", None)
 
     class SyntheticMessages:
         def create(self, **kwargs):
@@ -106,20 +123,17 @@ def test_real_prompt_read_paths(module_name, function, resource, returns_json):
         assert result == "synthetic summary"
 
 
-def test_real_yaml_loaders_preserve_existing_schema():
+def test_real_yaml_loaders_use_canonical_schema(monkeypatch):
     from src.classification import classifier
     from src.finance import event_extractor
     from src.medical import case_tracker
 
-    classifier._rules = None
-    event_extractor._rules = None
-    case_tracker._route_rules = None
+    monkeypatch.setattr(classifier, "_rules", None)
+    monkeypatch.setattr(event_extractor, "_rules", None)
+    monkeypatch.setattr(case_tracker, "_route_rules", None)
     assert classifier._load_rules()[0]["rule_id"] == "esencial_01"
     assert event_extractor._load_rules()["classification_rules"][0]["source"] == "tenpo"
-    with pytest.raises(yaml.parser.ParserError):
-        case_tracker._load_route_rules()
-    # Existing rule-schema/consumer mismatch is preserved, not repaired here.
+    assert case_tracker._load_route_rules()["routes"][0]["route"] == "esencial"
     assert classifier.classify_by_rules({"from": "synthetic@example.invalid"}) is None
     assert event_extractor.classify_finance_email({}) is None
-    with pytest.raises(yaml.parser.ParserError):
-        case_tracker.infer_insurer({})
+    assert case_tracker.infer_insurer({}) == "unknown"
