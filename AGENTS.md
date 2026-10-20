@@ -86,3 +86,15 @@ Mutation architecture: classifiers/extractors propose Gmail/Calendar changes; `s
 
 If a command is declared unavailable, the activation trigger and replacement command belong in `docs/ARCHITECTURE.yaml`; do not fabricate successful output.
 <!-- PORTFOLIO-CONSTITUTION:END -->
+
+## Issue #10: synthetic impact contract
+
+The public-synthetic example preserves raw fitted propensity support separately from bounded ordinary ATT weighting scores and reports clipping count/fraction. Weighted DiD uncertainty is conditional on supplied weights, without first-stage adjustment; coverage is unvalidated. See [example API and limits](examples/impact_evaluation/README.md).
+
+```bash
+python -m examples.impact_evaluation.reminder_impact --capabilities
+python -m examples.impact_evaluation.reminder_impact --format json
+python -m pytest -q tests/integration/test_impact_evaluation.py tests/integration/test_impact_evaluation_controls.py tests/e2e/test_impact_cli.py
+```
+
+These CPU-only commands use generated public-synthetic user-period data (days; seed 7; 6400 rows per design; 12000-row panel cap). No provider access is involved. Python 3.12/Linux x86_64 is the hash-locked configured gate. Use `requirements-impact.lock` with `--require-hashes --only-binary=:all:`; its header records generation inputs. PR #9 and issues #10/#11 track executed evidence and remaining acceptance, including installed/copied origins and dedicated human/security review; configuration alone is not proof.

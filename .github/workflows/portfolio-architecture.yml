@@ -20,9 +20,17 @@ jobs:
           python-version: '3.12'
       - name: Validate portfolio architecture contract
         run: python scripts/check_portfolio_architecture.py
-      - name: Install optional causal-impact profile
-        run: python -m pip install -e '.[impact]' pytest
+      - name: Install hash-locked Python 3.12 research profile
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r requirements-impact.lock
+          python -m pip install --no-deps --no-build-isolation -e .
       - name: Report causal-impact dependency versions
         run: python -c "import numpy, pandas, statsmodels; print(f'numpy={numpy.__version__} pandas={pandas.__version__} statsmodels={statsmodels.__version__}')"
-      - name: Run causal-impact integration tests
-        run: python -m pytest -q tests/integration/test_impact_evaluation.py
+      - name: Run all configured synthetic and governance tests
+        run: python -m pytest -q
+      - name: Exercise synthetic capability and JSON contracts
+        run: |
+          python -m examples.impact_evaluation.reminder_impact --capabilities
+          python -m examples.impact_evaluation.reminder_impact --format json
+      - name: Build wheel and source distribution from locked tooling
+        run: python -m build --no-isolation

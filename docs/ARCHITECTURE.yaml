@@ -161,8 +161,19 @@
         "license_evidence": "statsmodels: BSD-3-Clause; pandas: BSD-3-Clause; NumPy: BSD-3-Clause plus permissive bundled-component licenses, per official PyPI metadata.",
         "security_evidence": "GitHub Advisory Database spot-check on 2026-09-27 found no returned advisory applicable to the selected modern ranges; this is not a substitute for a reproducible lockfile vulnerability audit before production deployment.",
         "oracle_or_reference_tests": [
-          "tests/integration/test_impact_evaluation.py"
-        ]
+          "tests/integration/test_impact_evaluation.py",
+          "tests/integration/test_impact_evaluation_controls.py",
+          "tests/e2e/test_impact_cli.py"
+        ],
+        "inference_decision": {
+          "selected": "statsmodels OLS/WLS/logit and regression robust covariance; fixed supplied weights only",
+          "alternative": "TreatmentEffect joint GMM is not a drop-in user-clustered DiD estimator",
+          "limits": "No first-stage propensity uncertainty adjustment; coverage_validated=False for every estimate. Ordinary ATT weights, bounded for weighting only; raw fitted scores determine support.",
+          "references": [
+            "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.RegressionResults.get_robustcov_results.html",
+            "https://www.statsmodels.org/stable/treatment.html"
+          ]
+        }
       },
       {
         "capability": "portfolio architecture bootstrap",
@@ -296,16 +307,26 @@
       "lint": "ruff check .",
       "architecture": "python scripts/check_portfolio_architecture.py",
       "impact_setup": "python -m pip install -e '.[impact]' pytest",
-      "impact_test": "python -m pytest -q tests/integration/test_impact_evaluation.py"
+      "impact_test": "python -m pytest -q tests/integration/test_impact_evaluation.py tests/integration/test_impact_evaluation_controls.py tests/e2e/test_impact_cli.py",
+      "impact_capabilities": "python -m examples.impact_evaluation.reminder_impact --capabilities",
+      "impact_json": "python -m examples.impact_evaluation.reminder_impact --format json"
     },
     "runtime_coverage": [
       "tests/unit/test_governance_controls.py covers redaction, dry-run mutation proposals, audit events, and guarded Gmail mutators with fakes",
       "tests/unit/test_cli_import_boundaries.py covers the local cases CLI path without Anthropic/Google credentials or packages",
       "tests/architecture/ covers the portfolio architecture and AI hierarchy policy gates",
-      "tests/integration/test_impact_evaluation.py covers public-synthetic RCT recovery, observational selection bias, DiD/IPW recovery, propensity balance/overlap, tested SQLite preparation, and a deliberately violated parallel-trends failure mode when the optional impact dependencies are installed"
+      "tests/integration/test_impact_evaluation.py covers public-synthetic RCT recovery, observational selection bias, DiD/IPW recovery, propensity balance/overlap, tested SQLite preparation, and a deliberately violated parallel-trends failure mode when the optional impact dependencies are installed",
+      "Independent small NumPy contrast/HC1/cluster-sandwich oracles, disjoint raw-tail overlap, clipping metadata, SQL parity/connection closure, discovery without generation or writes, and strict JSON uncertainty labels."
     ],
-    "ci_workflow": ".github/workflows/portfolio-architecture.yml runs the architecture contract and optional causal-impact integration tests on pull requests.",
-    "mirror_source": "where pertinent"
+    "ci_workflow": ".github/workflows/portfolio-architecture.yml installs the Python 3.12 hash lock, runs architecture plus the full synthetic/governance suite, exercises capability/JSON contracts, and builds wheel/sdist. Declared full-repository lint/format debt is tracked in issue11, not silently waived.",
+    "mirror_source": "where pertinent",
+    "impact_profiles": {
+      "configured_gate": "Python 3.12; source applicability remains Python 3.11+; other Python versions NOT_RUN in this change",
+      "installed_and_copy_artifact": "Fresh normally installed core wheel plus a separate copied public-synthetic example; examples remain deliberately excluded from the runtime wheel. Explicit immutable hash-locked third-party reuse is permitted, with origin/version and dependency-coherence proof; do not call shared dependencies an independent reinstall.",
+      "locked_setup": "python -m pip install --require-hashes --only-binary=:all: -r requirements-impact.lock; python -m pip install --no-deps --no-build-isolation -e .",
+      "lock_generation": "Header in requirements-impact.lock records uv compile inputs, impact/dev extras, governance constraint, Python 3.12/Linux x86_64 and hashes. Other platforms/minors are not locked by this profile.",
+      "workflow": "Expanded source/capability/build commands are configured in portfolio-architecture.yml. Configuration is not hosted execution evidence. Full acceptance remains gated by issue10/11, actual resulting-main verification and repository human/security review."
+    }
   },
   "data": {
     "consumes_data": true,
@@ -341,7 +362,17 @@
     "quality_and_lineage": "Validate schema, grain, units, classification, lineage, freshness, licence, and content identity before consumption; fail closed on missing evidence.",
     "public_synthetic_examples": [
       "examples/impact_evaluation generates its own synthetic reminder outcomes and must not read Gmail, Calendar, or local private state."
-    ]
+    ],
+    "impact_example": {
+      "classification": "public_synthetic_only",
+      "grain": "user_period",
+      "outcome_unit": "days",
+      "seed": 7,
+      "lineage": "NumPy RNG -> synthetic events -> in-memory SQLite aggregation -> statsmodels -> report",
+      "limit_rows_per_panel": 12000,
+      "providers": false,
+      "support": "raw_propensity; bounded propensity used only for weights; clipping count and fraction reported"
+    }
   },
   "governance": {
     "architecture_source": "docs/ARCHITECTURE.yaml",

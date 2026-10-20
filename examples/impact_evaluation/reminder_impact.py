@@ -6,8 +6,11 @@ and diagnostics without using any private Bureaucracy Copilot data.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import argparse
+import json
 import sqlite3
+from contextlib import closing
+from dataclasses import asdict, dataclass
 from typing import Literal
 
 import numpy as np
@@ -26,6 +29,8 @@ class Estimate:
     ci_low: float
     ci_high: float
     p_value: float
+    uncertainty_scope: str = "regression_covariance_only"
+    coverage_validated: bool = False
 
 
 @dataclass(frozen=True)
@@ -46,6 +51,9 @@ class OverlapDiagnostic:
     control_min: float
     control_max: float
     fraction_outside_common_support: float
+    clipped_count: int
+    clipped_fraction: float
+    score_basis: str = "unclipped_fitted"
 
 
 PANEL_SQL = """
@@ -74,7 +82,13 @@ ORDER BY user_id, period;
 """.strip()
 
 
-def _to_estimate(method: str, estimand: str, result, term: str) -> Estimate:
+def _to_estimate(
+    method: str,
+    estimand: str,
+    result,
+    term: str,
+    uncertainty_scope: str = "regression_covariance_only",
+) -> Estimate:
     ci = result.conf_int().loc[term]
     return Estimate(
         method=method,
@@ -84,6 +98,7 @@ def _to_estimate(method: str, estimand: str, result, term: str) -> Estimate:
         ci_low=float(ci.iloc[0]),
         ci_high=float(ci.iloc[1]),
         p_value=float(result.pvalues[term]),
+        uncertainty_scope=uncertainty_scope,
     )
 
 
@@ -99,6 +114,9 @@ def simulate_rollout(
 ) -> pd.DataFrame:
     """Generate a user-period panel with known causal truth.
 
+    Public-synthetic grain: one user-period row; outcome unit: days.
+    Lineage: seeded NumPy RNG -> synthetic events -> optional SQLite panel.
+    Default seed is 7; at most 12000 rows per panel, CPU only.
     Outcome is days-to-resolution, so negative treatment effects are improvements.
 
     RCT identification comes from randomized assignment. Observational assignment
@@ -110,6 +128,8 @@ def simulate_rollout(
 
     if design not in {"rct", "observational"}:
         raise ValueError("design must be 'rct' or 'observational'")
+    if n_users * (n_pre + n_post) > 12_000:
+        raise ValueError("synthetic panel is limited to 12000 user-period rows")
     if min(n_users, n_pre, n_post) <= 0:
         raise ValueError("n_users, n_pre, and n_post must be positive")
 
@@ -181,7 +201,7 @@ def build_panel_from_sqlite(events: pd.DataFrame) -> pd.DataFrame:
     if missing:
         raise ValueError(f"missing required columns: {sorted(missing)}")
 
-    with sqlite3.connect(":memory:") as conn:
+    with closing(sqlite3.connect(":memory:")) as conn:
         events.to_sql("reminder_events", conn, index=False, if_exists="replace")
         return pd.read_sql_query(PANEL_SQL, conn)
 
@@ -211,7 +231,11 @@ def estimate_naive_observational(panel: pd.DataFrame) -> Estimate:
 
 
 def estimate_did(panel: pd.DataFrame, *, weights: pd.Series | None = None) -> Estimate:
-    """Two-group DiD with period fixed effects and user-clustered standard errors."""
+    """DiD with user-clustered regression uncertainty, treating weights as fixed.
+
+    Supplied weights require substantive justification for an ATT interpretation.
+    Estimated-propensity first-stage uncertainty and coverage validation are absent.
+    """
 
     formula = "days_to_resolution ~ treated + treated:post + C(period)"
     if weights is None:
@@ -222,11 +246,16 @@ def estimate_did(panel: pd.DataFrame, *, weights: pd.Series | None = None) -> Es
         label = "IPW difference in differences"
 
     result = model.fit(cov_type="cluster", cov_kwds={"groups": panel["user_id"]})
-    return _to_estimate(label, "ATT under stated assumptions", result, "treated:post")
+    estimand = "ATT under stated assumptions"
+    scope = "user_clustered_regression_covariance"
+    if weights is not None:
+        estimand += "; requires justified weights"
+        scope = "conditional_on_supplied_weights_no_first_stage_adjustment"
+    return _to_estimate(label, estimand, result, "treated:post", scope)
 
 
 def propensity_scores(panel: pd.DataFrame, *, clip: float = 0.05) -> pd.DataFrame:
-    """Fit baseline treatment propensity and return stabilized ATT-style weights.
+    """Fit baseline treatment propensity and return ordinary ATT weights.
 
     One baseline row per user is used to avoid repeated-observation pseudo-sample
     inflation in the propensity model. Scores are clipped only for numerical
@@ -242,7 +271,9 @@ def propensity_scores(panel: pd.DataFrame, *, clip: float = 0.05) -> pd.DataFram
         .first()[["user_id", "treated", "backlog_z", "complexity_z"]]
     )
     fit = smf.logit("treated ~ backlog_z + complexity_z", data=baseline).fit(disp=False)
-    baseline["propensity"] = fit.predict(baseline).clip(clip, 1.0 - clip)
+    baseline["raw_propensity"] = fit.predict(baseline)
+    baseline["propensity"] = baseline["raw_propensity"].clip(clip, 1.0 - clip)
+    baseline["propensity_was_clipped"] = baseline["raw_propensity"].ne(baseline["propensity"])
 
     # ATT weights: treated units weight 1, controls e/(1-e).
     baseline["weight"] = np.where(
@@ -278,9 +309,7 @@ def balance_diagnostics(propensity_frame: pd.DataFrame) -> list[BalanceDiagnosti
 
         wt = weights[treated]
         wc = weights[~treated]
-        weighted_pooled_sd = np.sqrt(
-            (_weighted_var(x_t, wt) + _weighted_var(x_c, wc)) / 2.0
-        )
+        weighted_pooled_sd = np.sqrt((_weighted_var(x_t, wt) + _weighted_var(x_c, wc)) / 2.0)
         weighted = (_weighted_mean(x_t, wt) - _weighted_mean(x_c, wc)) / weighted_pooled_sd
         diagnostics.append(
             BalanceDiagnostic(
@@ -295,17 +324,25 @@ def balance_diagnostics(propensity_frame: pd.DataFrame) -> list[BalanceDiagnosti
 def overlap_diagnostic(propensity_frame: pd.DataFrame) -> OverlapDiagnostic:
     """Summarize empirical common support of estimated propensity scores."""
 
-    treated_scores = propensity_frame.loc[propensity_frame["treated"].eq(1), "propensity"]
-    control_scores = propensity_frame.loc[propensity_frame["treated"].eq(0), "propensity"]
+    required = {"raw_propensity", "propensity", "propensity_was_clipped", "treated"}
+    if not required.issubset(propensity_frame.columns):
+        raise ValueError("overlap requires raw_propensity and explicit clipping metadata")
+    scores = propensity_frame["raw_propensity"]
+    if not scores.between(0, 1).all() or set(propensity_frame["treated"]) != {0, 1}:
+        raise ValueError("overlap requires finite raw probabilities and both treatment groups")
+    treated_scores = scores.loc[propensity_frame["treated"].eq(1)]
+    control_scores = scores.loc[propensity_frame["treated"].eq(0)]
     common_low = max(float(treated_scores.min()), float(control_scores.min()))
     common_high = min(float(treated_scores.max()), float(control_scores.max()))
-    outside = ~propensity_frame["propensity"].between(common_low, common_high)
+    outside = ~scores.between(common_low, common_high)
     return OverlapDiagnostic(
         treated_min=float(treated_scores.min()),
         treated_max=float(treated_scores.max()),
         control_min=float(control_scores.min()),
         control_max=float(control_scores.max()),
         fraction_outside_common_support=float(outside.mean()),
+        clipped_count=int(propensity_frame["propensity_was_clipped"].sum()),
+        clipped_fraction=float(propensity_frame["propensity_was_clipped"].mean()),
     )
 
 
@@ -313,7 +350,9 @@ def attach_ipw(panel: pd.DataFrame, propensity_frame: pd.DataFrame) -> pd.DataFr
     """Attach one user-level propensity/weight to every user-period row."""
 
     return panel.merge(
-        propensity_frame[["user_id", "propensity", "weight"]],
+        propensity_frame[
+            ["user_id", "raw_propensity", "propensity", "propensity_was_clipped", "weight"]
+        ],
         on="user_id",
         how="left",
         validate="many_to_one",
@@ -332,10 +371,12 @@ def pretrend_placebo(panel: pd.DataFrame) -> Estimate:
         "days_to_resolution ~ treated + period + treated:period + backlog_z + complexity_z",
         data=pre,
     ).fit(cov_type="cluster", cov_kwds={"groups": pre["user_id"]})
-    return _to_estimate("Pre-trend placebo", "differential pre-period slope", result, "treated:period")
+    return _to_estimate(
+        "Pre-trend placebo", "differential pre-period slope", result, "treated:period"
+    )
 
 
-def compare_designs(*, seed: int = 7) -> pd.DataFrame:
+def comparison_report(*, seed: int = 7) -> dict[str, object]:
     """Run the complete synthetic RCT-versus-observational comparison."""
 
     rct = build_panel_from_sqlite(simulate_rollout(design="rct", seed=seed))
@@ -350,10 +391,58 @@ def compare_designs(*, seed: int = 7) -> pd.DataFrame:
         estimate_did(obs_weighted, weights=obs_weighted["weight"]),
         pretrend_placebo(obs),
     ]
-    return pd.DataFrame([estimate.__dict__ for estimate in estimates])
+    return {
+        "schema": "bureaucracy-copilot.impact-example.v1",
+        "scope": "public_synthetic_only",
+        "data": {
+            "grain": "user_period",
+            "outcome_unit": "days",
+            "seed": seed,
+            "lineage": "NumPy RNG -> synthetic events -> in-memory SQLite panel",
+            "users_per_design": 800,
+            "rows_per_design": 6400,
+            "max_rows": 12000,
+        },
+        "estimates": [asdict(estimate) for estimate in estimates],
+        "overlap": asdict(overlap_diagnostic(prop)),
+        "balance": [asdict(item) for item in balance_diagnostics(prop)],
+    }
+
+
+def compare_designs(*, seed: int = 7) -> pd.DataFrame:
+    """Compatibility table; retains uncertainty labels in every result row."""
+    return pd.DataFrame(comparison_report(seed=seed)["estimates"])
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Discover capabilities or print a bounded public-synthetic comparison."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--capabilities", action="store_true")
+    parser.add_argument("--format", choices=("text", "json"), default="text")
+    args = parser.parse_args(argv)
+    if args.capabilities:
+        print(
+            json.dumps(
+                {
+                    "scope": "public_synthetic_only",
+                    "raw_score_overlap": True,
+                    "estimated_weight_inference": "not_supplied",
+                    "live_provider_calls": False,
+                }
+            )
+        )
+        return 0
+    report = comparison_report()
+    if args.format == "json":
+        print(json.dumps(report, allow_nan=False))
+    else:
+        print(
+            "Public-synthetic only; coverage unvalidated; IPW uncertainty treats weights as fixed."
+        )
+        print(pd.DataFrame(report["estimates"]).round(3).to_string(index=False))
+        print("Raw-score overlap and clipping:", json.dumps(report["overlap"], allow_nan=False))
+    return 0
 
 
 if __name__ == "__main__":
-    pd.set_option("display.width", 140)
-    pd.set_option("display.max_columns", None)
-    print(compare_designs().round(3).to_string(index=False))
+    raise SystemExit(main())

@@ -97,7 +97,7 @@ For baseline covariates \(X_i=(\text{backlog}_i,\text{complexity}_i)\), estimate
 e(X_i)=P(D_i=1\mid X_i)
 \]
 
-with `statsmodels` logistic regression. ATT-style weights are
+with `statsmodels` logistic regression. Ordinary ATT weights are
 
 \[
 w_i=
@@ -107,7 +107,9 @@ w_i=
 \end{cases}
 \]
 
-This targets an observational comparison whose measured baseline covariates more closely resemble the treated group.
+This targets an observational comparison whose measured baseline covariates more closely resemble the treated group. An ATT interpretation requires justified weights and identification assumptions; bounding scores changes the weights and can change the target. These are ordinary ATT weights, not stabilized weights.
+
+WLS user-clustered covariance treats the supplied weights as fixed. It does **not** account for the estimated propensity first stage. Every typed `Estimate` and programmatic report exposes `uncertainty_scope` and `coverage_validated=False`; intervals are illustrative regression uncertainty, with no validated full-procedure coverage claim. Statsmodels cluster finite-sample corrections do not supply that missing inference. Its joint-GMM `TreatmentEffect` API is not a drop-in clustered DiD estimator.
 
 **What weighting does not do:** it cannot repair unobserved confounding, interference, differential untreated trends, post-treatment conditioning, or lack of common support. Balance after weighting is a diagnostic, not proof of causal validity.
 
@@ -125,7 +127,7 @@ The tests require absolute weighted SMDs below `0.10` on the two synthetic assig
 
 ### Overlap / positivity
 
-The code reports treated/control propensity ranges and the fraction of observations outside empirical common support. Extreme scores imply unstable weights and weak support for counterfactual comparisons.
+The code preserves `raw_propensity`, bounded weighting `propensity`, and `propensity_was_clipped`. It reports treated/control **unclipped fitted** ranges, the fraction outside empirical common support, and the user-level clipping count/fraction. Clipped-only frames are rejected: clipping disjoint extreme tails can otherwise manufacture apparent overlap. Extreme scores imply unstable weights and weak support for counterfactual comparisons.
 
 ### Pre-trend placebo
 
@@ -194,8 +196,10 @@ This example is intentionally an optional research profile so the core Gmail/Cal
 
 ```bash
 python -m pip install -e '.[impact]'
-python examples/impact_evaluation/reminder_impact.py
-python -m pytest -q tests/integration/test_impact_evaluation.py
+python -m examples.impact_evaluation.reminder_impact --capabilities
+python -m examples.impact_evaluation.reminder_impact --format json
+python -m examples.impact_evaluation.reminder_impact --format text
+python -m pytest -q tests/integration/test_impact_evaluation.py tests/integration/test_impact_evaluation_controls.py tests/e2e/test_impact_cli.py
 ```
 
 Expected deterministic result with the default seed is approximately:
@@ -223,7 +227,28 @@ The test suite checks that:
 - a deliberately violated parallel-trends design is detected by the placebo and biases DiD;
 - propensity weights are finite and positive.
 
-The implementation was executed locally with **7 passing tests** on Python 3.13.5, NumPy 2.3.5, pandas 2.2.3, and statsmodels 0.14.6. The pull-request workflow also resolved the current releases checked on 2026-09-27—**NumPy 2.5.3, pandas 3.0.6, and statsmodels 0.15.0**—and ran the same integration suite with **7 passing tests** on Python 3.12.
+Current configured hash-locked gate: Python 3.12/Linux x86_64. Source applicability remains Python 3.11+; the lock does not validate other minors/platforms. Install with `python -m pip install --require-hashes --only-binary=:all: -r requirements-impact.lock`, then `python -m pip install --no-deps --no-build-isolation -e .`. The lock header records its generation command. The workflow runs the full test suite, capability/JSON commands and wheel/sdist build. PR #9 and issues #10/#11 record actual execution evidence and remaining acceptance; historical runs and workflow configuration are not acceptance of the current changes.
+
+The normal profile installs the core wheel in a fresh environment and tests a separately copied example outside the checkout: this research example is deliberately excluded from the runtime wheel. Compatible immutable hash-locked third-party packages may be reused read-only, with explicit dependency-coherence and import-origin receipts. That reuse is not an independent dependency reinstall. Whole-repository Ruff debt and required human/security review remain distinct gates.
+
+## Human API and data contract
+
+```python
+from examples.impact_evaluation.reminder_impact import (
+    simulate_rollout,
+    propensity_scores,
+    overlap_diagnostic,
+    comparison_report,
+)
+
+panel = simulate_rollout(design="observational", seed=7)
+raw_support = overlap_diagnostic(propensity_scores(panel))  # immutable typed diagnostic
+report = comparison_report(seed=7)  # same schema as JSON CLI
+```
+
+The grain is one synthetic user × period, the outcome unit is days, and baseline covariates are dimensionless. Default seed 7 produces 800 users × 8 periods (6400 rows per design). Each generated panel is capped at 12000 rows, CPU only. Lineage is seeded NumPy RNG → synthetic event records → in-memory SQLite aggregation → maintained statsmodels estimates → governed public-synthetic report. Negative synthetic outcomes can occur under the illustrative Gaussian DGP; this is not a calibrated duration model.
+
+`main(argv)` prints text or strict JSON (`bureaucracy-copilot.impact-example.v1`), without persisting data. `--capabilities` returns JSON without generating data, fitting models, or writing files. No command accepts private inputs or calls providers. `compare_designs()` retains its DataFrame interface and includes uncertainty labels.
 
 ## Dependency and data boundary
 
