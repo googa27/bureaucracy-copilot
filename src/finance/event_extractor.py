@@ -10,7 +10,9 @@ from pathlib import Path
 
 import yaml
 
-RULES_PATH = Path(__file__).parent.parent.parent / "rules" / "finance_classification.yaml"
+from src.utils.resources import default_resource
+
+RULES_PATH = default_resource("rules/finance_classification.yaml")
 EVENTS_DIR = Path("~/.bureaucracy_copilot/finance_events").expanduser()
 
 _rules: dict | None = None
@@ -19,7 +21,7 @@ _rules: dict | None = None
 def _load_rules() -> dict:
     global _rules
     if _rules is None:
-        with open(RULES_PATH) as f:
+        with RULES_PATH.open("r", encoding="utf-8") as f:
             _rules = yaml.safe_load(f)
     return _rules
 

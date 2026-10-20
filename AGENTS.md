@@ -111,3 +111,25 @@ propagate. Legacy event/case/log timestamps remain naive UTC ISO strings; audit
 records remain offset-qualified. See `docs/ARCHITECTURE.md` for boundary contracts.
 Human/security review and verification on actual resulting main remain outstanding;
 local gates and configured CI are not evidence of those approvals or hosted success.
+
+
+## Issue #12: bundled defaults
+
+The single canonical default source is `src/utils/assets/prompts/` (five templates)
+and `src/utils/assets/rules/` (four YAML files). Explicit setuptools package-data
+includes them in wheel and sdist. `src.utils.resources.default_resource` rejects
+names outside the fixed registry and returns an importlib.resources Traversable;
+consumers use UTF-8 `read_text`/`open`, including non-filesystem loaders. Existing
+`PROMPT_PATH`, `RULES_PATH`, and `ROUTES_PATH` constants are resource handles now;
+pathlib-only operations and writes through those constants are unsupported.
+Private state paths and mutation approval requirements are unchanged.
+
+Byte preservation includes existing limitations: `medical_routes.yaml` line 24
+is invalid YAML and still raises PyYAML ParserError; Gmail/finance rule schemas
+also differ from their current consumers. Packaging tests retain these outcomes,
+not semantic repairs. Those runtime schema/routing defects are separately owned by
+[issue #13](https://github.com/googa27/bureaucracy-copilot/issues/13), not accepted
+functionality. All nine original hashes and synthetic resource-backed API
+checks live in `tests/integration/test_default_resources.py`; package selection
+fitness lives in `tests/architecture/test_resource_packaging.py`. Source passes
+do not certify final installed artifacts, human/security approval, or main.

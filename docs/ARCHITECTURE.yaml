@@ -63,7 +63,16 @@
       "src/outputs/.gitkeep",
       "src/summaries/.gitkeep",
       "src/utils/.gitkeep",
-      "src/governance/.gitkeep"
+      "src/governance/.gitkeep",
+      "src/utils/assets/prompts/build_claim_case.md",
+      "src/utils/assets/prompts/classify_email.md",
+      "src/utils/assets/prompts/draft_followup.md",
+      "src/utils/assets/prompts/summarize_finance_monthly.md",
+      "src/utils/assets/prompts/summarize_weekly_hygiene.md",
+      "src/utils/assets/rules/finance_classification.yaml",
+      "src/utils/assets/rules/gmail_sender_rules.yaml",
+      "src/utils/assets/rules/medical_routes.yaml",
+      "src/utils/assets/rules/summary_rules.yaml"
     ],
     "future_rule": "Any new Python package uses a src layout unless an evidence-backed exception is approved.",
     "hierarchy_policy": {
@@ -276,6 +285,24 @@
           "tests/unit/test_policy_error_boundary.py",
           "tests/architecture/test_quality_workflow.py"
         ]
+      },
+      {
+        "capability": "bundled default prompts and YAML rules",
+        "selected": [
+          "existing setuptools explicit package-data",
+          "Python stdlib importlib.resources.files and Traversable"
+        ],
+        "alternatives": [
+          "root data-files installation",
+          "filesystem-relative lookup",
+          "duplicated defaults"
+        ],
+        "evidence": "https://setuptools.pypa.io/en/latest/userguide/datafiles.html; https://docs.python.org/3.12/library/importlib.resources.html; docs/ARCHITECTURE.md",
+        "adapter_boundary": "src.utils.resources.default_resource owns the fixed read-only payload registry; domain consumers use Traversable.open/read_text with UTF-8",
+        "custom_code_reason": "Only application-specific names and rejection policy are custom; discovery/packaging/opening use maintained public APIs.",
+        "maintenance_evidence": "Official maintained setuptools and Python 3.12 documentation checked 2026-10-20; no dependency versions changed.",
+        "api_stability_evidence": "Public package-data and files/Traversable APIs; compatible with declared Python >=3.11.",
+        "license_evidence": "Setuptools MIT and Python PSF licenses; existing build tool and stdlib only."
       }
     ]
   },
@@ -342,7 +369,9 @@
       "impact_test": "python -m pytest -q tests/integration/test_impact_evaluation.py tests/integration/test_impact_evaluation_controls.py tests/e2e/test_impact_cli.py",
       "impact_capabilities": "python -m examples.impact_evaluation.reminder_impact --capabilities",
       "impact_json": "python -m examples.impact_evaluation.reminder_impact --format json",
-      "format": "python -m ruff format --check ."
+      "format": "python -m ruff format --check .",
+      "resource_test": "python -m pytest -q tests/integration/test_default_resources.py tests/architecture/test_resource_packaging.py",
+      "distribution_resources": "python scripts/check_distribution_resources.py dist/*.whl dist/*.tar.gz"
     },
     "runtime_coverage": [
       "tests/unit/test_governance_controls.py covers redaction, dry-run mutation proposals, audit events, and guarded Gmail mutators with fakes",
@@ -352,9 +381,10 @@
       "Independent small NumPy contrast/HC1/cluster-sandwich oracles, disjoint raw-tail overlap, clipping metadata, SQL parity/connection closure, discovery without generation or writes, and strict JSON uncertainty labels.",
       "tests/unit/test_repository_quality.py: real valid/invalid JSON compatibility, unexpected decoder error propagation, explicit UTC clocks with legacy naive serialization and UTC date/month boundaries",
       "tests/unit/test_policy_error_boundary.py: expected contract load diagnostics and unexpected validation errors propagate",
-      "tests/architecture/test_quality_workflow.py: PyYAML-parsed actual run step invocations enforce complete Ruff gates after locked dependency installation"
+      "tests/architecture/test_quality_workflow.py: PyYAML-parsed actual run step invocations enforce complete Ruff gates after locked dependency installation",
+      "tests/integration/test_default_resources.py pins all nine pre-migration byte hashes, exercises all five prompt consumers with synthetic clients and real YAML loaders; medical_routes.yaml retains its pre-existing ParserError, and rule-schema mismatch is unchanged."
     ],
-    "ci_workflow": ".github/workflows/portfolio-architecture.yml installs the Python 3.12 hash lock, runs complete repository Ruff lint/format gates, architecture and the full configured synthetic/governance suite, exercises capability/JSON contracts, and builds wheel/sdist. Configuration is not hosted execution evidence.",
+    "ci_workflow": ".github/workflows/portfolio-architecture.yml installs the Python 3.12 hash lock, runs complete repository Ruff lint/format gates, architecture and the full configured synthetic/governance suite, exercises capability/JSON contracts, and builds wheel/sdist. Configuration is not hosted execution evidence. Issue12 adds archive byte comparison and a resource-focused normal-wheel test from a source-free temporary cwd; this focused check does not substitute for the full installed/copied acceptance profile.",
     "mirror_source": "where pertinent",
     "impact_profiles": {
       "configured_gate": "Python 3.12; source applicability remains Python 3.11+; other Python versions NOT_RUN in this change",
@@ -370,6 +400,16 @@
         "result": "Per-attempt evidence, not a permanent source declaration of PASS or NOT_RUN.",
         "partial_checks": "pinact and policy self-tests do not substitute for Zizmor."
       }
+    },
+    "resource_packaging": {
+      "canonical_root": "src/utils/assets",
+      "api": "Existing *_PATH constants are now Traversable handles, supporting read_text/open; pathlib-only operations are not supported. Private writable state remains pathlib-based.",
+      "acceptance": "Final exact wheel/sdist byte checks and source-free normal-installed full runtime/copied research suites remain required separately from source gates.",
+      "semantic_defect_owner": "https://github.com/googa27/bureaucracy-copilot/issues/13",
+      "known_preexisting_limitations": [
+        "medical_routes.yaml has invalid YAML at line 24; original bytes and ParserError preserved",
+        "Gmail and finance rule schemas differ from consumer expectations; no semantic repair in packaging issue12"
+      ]
     }
   },
   "data": {

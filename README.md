@@ -83,8 +83,6 @@ bureaucracy-copilot/
 │   └── assets/
 ├── examples/
 │   └── impact_evaluation/   # Public-synthetic RCT/DiD/propensity/SQL case study
-├── prompts/                 # LLM prompt templates
-├── rules/                   # YAML classification and routing rules
 ├── schemas/                 # JSON Schema contracts
 ├── src/
 │   ├── calendar/            # Calendar reminder scaffolding
@@ -95,6 +93,9 @@ bureaucracy-copilot/
 │   ├── outputs/             # Draft/output helpers
 │   ├── summaries/           # Weekly/monthly summary helpers
 │   └── utils/               # Config/logging
+│       └── assets/         # Bundled read-only defaults
+│           ├── prompts/    # Five LLM prompt templates
+│           └── rules/      # Four YAML rule payloads
 ├── notebooks/               # Exploratory notebooks
 └── tests/                   # Unit governance/import-boundary tests plus architecture gates
 ```
@@ -123,12 +124,12 @@ Safety posture:
 | Area | Status | Evidence | Caveat |
 |---|---|---|---|
 | Product docs | Defined | `PRD.md`, `PLAN.md`, `docs/` | Product language is aspirational; README reflects current MVP truth. |
-| Label taxonomy | Defined | `docs/label-taxonomy.md`, `rules/gmail_sender_rules.yaml` | Needs live mailbox validation. |
+| Label taxonomy | Defined | `docs/label-taxonomy.md`, `src/utils/assets/rules/gmail_sender_rules.yaml` | Needs live mailbox validation. |
 | Schemas | Defined | `schemas/*.schema.json`, `docs/data-model.md` | Schema validation is not wired through a test suite yet. |
 | Gmail classification | Scaffolded | `src/main.py`, `src/ingestion/`, `src/classification/` | Requires OAuth, Anthropic key, and careful review. |
 | Medical case tracking | Scaffolded | `src/medical/case_tracker.py` | Not medical advice; no submission automation or reimbursement guarantee. |
 | Finance event extraction | Scaffolded | `src/finance/event_extractor.py` | Not financial advice; no accuracy metrics. |
-| Summaries | Scaffolded | `src/summaries/`, `prompts/` | LLM summaries need review before action. |
+| Summaries | Scaffolded | `src/summaries/`, `src/utils/assets/prompts/` | LLM summaries need review before action. |
 | Calendar reminders | Designed/scaffolded | `docs/calendar-automation.md`, `src/calendar/` | Do not include sensitive details in public or shared calendar text. |
 | Causal impact example | Implemented | `examples/impact_evaluation/`, `tests/integration/test_impact_evaluation.py` | Public-synthetic interview-sized artifact; not evidence of production impact. |
 | Tests | Initial coverage | `tests/unit/test_governance_controls.py`, `tests/unit/test_cli_import_boundaries.py`, `tests/architecture/` | Covers governance controls, dry-run mutation/audit behavior, local `cases` CLI import boundary, and architecture gates; no live Gmail/Calendar/LLM validation or accuracy benchmark. |

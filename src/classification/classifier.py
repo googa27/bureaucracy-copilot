@@ -3,13 +3,14 @@ classifier.py — Classify Gmail messages using sender rules and LLM fallback.
 """
 
 import json
-from pathlib import Path
 from typing import Any
 
 import yaml
 
-RULES_PATH = Path(__file__).parent.parent.parent / "rules" / "gmail_sender_rules.yaml"
-PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "classify_email.md"
+from src.utils.resources import default_resource
+
+RULES_PATH = default_resource("rules/gmail_sender_rules.yaml")
+PROMPT_PATH = default_resource("prompts/classify_email.md")
 
 _rules: list[dict] | None = None
 _prompt_template: str | None = None
@@ -18,7 +19,7 @@ _prompt_template: str | None = None
 def _load_rules() -> list[dict]:
     global _rules
     if _rules is None:
-        with open(RULES_PATH) as f:
+        with RULES_PATH.open("r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         _rules = data.get("rules", [])
     return _rules
@@ -27,7 +28,7 @@ def _load_rules() -> list[dict]:
 def _load_prompt() -> str:
     global _prompt_template
     if _prompt_template is None:
-        _prompt_template = PROMPT_PATH.read_text()
+        _prompt_template = PROMPT_PATH.read_text(encoding="utf-8")
     return _prompt_template
 
 

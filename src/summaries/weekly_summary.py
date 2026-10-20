@@ -7,7 +7,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "summarize_weekly_hygiene.md"
+from src.utils.resources import default_resource
+
+PROMPT_PATH = default_resource("prompts/summarize_weekly_hygiene.md")
 
 
 def collect_weekly_data(
@@ -45,7 +47,7 @@ def collect_weekly_data(
 
 def generate_weekly_summary(data: dict, client: Any) -> str:
     """Use Claude to produce a readable weekly summary."""
-    prompt = PROMPT_PATH.read_text()
+    prompt = PROMPT_PATH.read_text(encoding="utf-8")
     user_message = json.dumps(data, indent=2, ensure_ascii=False)
 
     message = client.messages.create(

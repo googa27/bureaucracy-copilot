@@ -7,14 +7,14 @@ from __future__ import annotations
 import base64
 import json
 from email.mime.text import MIMEText
-from pathlib import Path
 
 import anthropic
 
 from src.governance.executor import MutationGuard
 from src.governance.types import MutationProposal, MutationResult
+from src.utils.resources import default_resource
 
-PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "draft_followup.md"
+PROMPT_PATH = default_resource("prompts/draft_followup.md")
 GMAIL_COMPOSE_SCOPE = "https://www.googleapis.com/auth/gmail.compose"
 
 
@@ -38,7 +38,7 @@ def draft_followup_email(
     language: str = "es",
 ) -> dict:
     """Use Claude to draft a follow-up email for a reimbursement case."""
-    prompt = PROMPT_PATH.read_text()
+    prompt = PROMPT_PATH.read_text(encoding="utf-8")
     context = build_followup_context(case)
     user_message = f"Language: {language}\n\n{context}"
 

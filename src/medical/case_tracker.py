@@ -8,8 +8,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "build_claim_case.md"
-ROUTES_PATH = Path(__file__).parent.parent.parent / "rules" / "medical_routes.yaml"
+from src.utils.resources import default_resource
+
+PROMPT_PATH = default_resource("prompts/build_claim_case.md")
+ROUTES_PATH = default_resource("rules/medical_routes.yaml")
 CASES_DIR = Path("~/.bureaucracy_copilot/cases").expanduser()
 
 _route_rules: dict | None = None
@@ -20,7 +22,7 @@ def _load_route_rules() -> dict:
     if _route_rules is None:
         import yaml
 
-        with open(ROUTES_PATH) as f:
+        with ROUTES_PATH.open("r", encoding="utf-8") as f:
             _route_rules = yaml.safe_load(f)
     return _route_rules
 
@@ -43,7 +45,7 @@ def infer_insurer(email: dict) -> str | None:
 
 def extract_case_fields(email: dict, client: Any) -> dict:
     """Use Claude to extract structured fields from a medical email."""
-    prompt = PROMPT_PATH.read_text()
+    prompt = PROMPT_PATH.read_text(encoding="utf-8")
     user_message = (
         f"FROM: {email.get('from', '')}\n"
         f"SUBJECT: {email.get('subject', '')}\n"

@@ -106,3 +106,32 @@ installation of the declared tool; report its actual result for the exact revisi
 Passing local pinact and policy self-tests are partial checks, not a replacement
 security-audit result. Reused immutable dependencies and separately installed
 project wheels must be identified independently in retained execution evidence.
+
+
+## Issue #12: bundled defaults
+
+The single canonical default source is `src/utils/assets/prompts/` (five templates)
+and `src/utils/assets/rules/` (four YAML files). Explicit setuptools package-data
+includes them in wheel and sdist. `src.utils.resources.default_resource` rejects
+names outside the fixed registry and returns an importlib.resources Traversable;
+consumers use UTF-8 `read_text`/`open`, including non-filesystem loaders. Existing
+`PROMPT_PATH`, `RULES_PATH`, and `ROUTES_PATH` constants are resource handles now;
+pathlib-only operations and writes through those constants are unsupported.
+Private state paths and mutation approval requirements are unchanged.
+
+Byte preservation includes existing limitations: `medical_routes.yaml` line 24
+is invalid YAML and still raises PyYAML ParserError; Gmail/finance rule schemas
+also differ from their current consumers. Packaging tests retain these outcomes,
+not semantic repairs. Those runtime schema/routing defects are separately owned by
+[issue #13](https://github.com/googa27/bureaucracy-copilot/issues/13), not accepted
+functionality. All nine original hashes and synthetic resource-backed API
+checks live in `tests/integration/test_default_resources.py`; package selection
+fitness lives in `tests/architecture/test_resource_packaging.py`. Source passes
+do not certify final installed artifacts, human/security approval, or main.
+
+The build contract follows [setuptools package-data](https://setuptools.pypa.io/en/latest/userguide/datafiles.html)
+and [Python resource access](https://docs.python.org/3.12/library/importlib.resources.html).
+No new dependency or custom installer is needed. CI compares wheel/sdist bytes with
+`scripts/check_distribution_resources.py`, then exercises normally installed
+resource consumers from a temporary directory. This focused CI check complements
+the separately required full installed/copied acceptance profile.
