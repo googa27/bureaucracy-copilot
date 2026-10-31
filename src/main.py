@@ -34,6 +34,7 @@ def run_classify(
 ) -> None:
     """Fetch unclassified emails, classify, and plan/apply labels with approval controls."""
     from src.classification.classifier import classify
+    from src.classification.proposal import plan_classification
     from src.finance.event_extractor import classify_finance_email, create_event, save_event
     from src.ingestion.gmail_reader import (
         apply_label,
@@ -52,27 +53,28 @@ def run_classify(
         raw = get_message(gmail, msg["id"])
         email = parse_message(raw)
         result = classify(email, anthropic_client)
-        label_name = result.get("label", "BC/misc/unclassified")
-        label_id = get_or_create_label(gmail, label_name, guard=guard)
-        if label_id is not None:
-            label_result = apply_label(
-                gmail,
-                email["id"],
-                [label_id],
-                guard=guard,
-                subject=email.get("subject"),
-                label_name=label_name,
-            )
-            if label_result.status == "planned":
-                print(
-                    json.dumps(
-                        {"dry_run": redact_mapping(label_result.to_dict())},
-                        indent=2,
-                        ensure_ascii=False,
-                    )
+        plan = plan_classification(result)
+        for label_name in plan["labels"]:
+            label_id = get_or_create_label(gmail, label_name, guard=guard)
+            if label_id is not None:
+                label_result = apply_label(
+                    gmail,
+                    email["id"],
+                    [label_id],
+                    guard=guard,
+                    subject=email.get("subject"),
+                    label_name=label_name,
                 )
+                if label_result.status == "planned":
+                    print(
+                        json.dumps(
+                            {"dry_run": redact_mapping(label_result.to_dict())},
+                            indent=2,
+                            ensure_ascii=False,
+                        )
+                    )
 
-        if result.get("action") == "archive":
+        if plan["archive"]:
             archive_result = archive_message(
                 gmail,
                 email["id"],
@@ -90,14 +92,14 @@ def run_classify(
 
         classified += 1
         safe_email = redact_mapping(email)
-        logger.info("Classified message -> %s; preview=%s", label_name, safe_email.get("subject"))
+        logger.info("Classified message; preview=%s", safe_email.get("subject"))
 
-        if result.get("category") in ("medical", "reimbursement"):
+        if plan["medical"]:
             fields = extract_case_fields(email, anthropic_client)
             case = create_case(email, fields)
             save_case(case)
-            logger.info("Created case %s for %s", case["case_id"][:8], label_name)
-        elif result.get("category") in ("finance", "banking", "investment"):
+            logger.info("Created medical case")
+        if plan["finance"]:
             fin_class = classify_finance_email(email) or result
             event = create_event(email, fin_class)
             save_event(event)
