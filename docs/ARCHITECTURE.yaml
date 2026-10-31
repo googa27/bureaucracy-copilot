@@ -135,8 +135,13 @@
     "decisions": [
       {
         "capability": "transitive ASN.1 codecs used by Google authentication dependencies",
-        "selected": ["pyasn1==0.6.5 in requirements-impact.lock"],
-        "alternatives": ["retain vulnerable 0.6.4", "replace the authentication dependency stack"],
+        "selected": [
+          "pyasn1==0.6.5 in requirements-impact.lock"
+        ],
+        "alternatives": [
+          "retain vulnerable 0.6.4",
+          "replace the authentication dependency stack"
+        ],
         "evidence": "2026-10-31: upstream v0.6.5 fixes CVE-2026-119194/119195/119196/119197; https://github.com/pyasn1/pyasn1/releases/tag/v0.6.5; official PyPI release is BSD-2-Clause, Python >=3.8, with wheel SHA256 4017b0fce125096b8573b39c989fdb1a4b19cf761e683398184550fea0e66587 and sdist SHA256 6b11616a6bcf3a40e635f082bb232fa57b5e0dd7f517bd7ddd69ec3794508a47",
         "adapter_boundary": "Existing pyasn1-modules/authentication dependency boundary; application imports and resource contracts are unchanged.",
         "custom_code_reason": "Consume the upstream security patch instead of copying decoder implementations. This is an existing transitive dependency patch, not a new package."
@@ -390,7 +395,8 @@
       "tests/unit/test_repository_quality.py: real valid/invalid JSON compatibility, unexpected decoder error propagation, explicit UTC clocks with legacy naive serialization and UTC date/month boundaries",
       "tests/unit/test_policy_error_boundary.py: expected contract load diagnostics and unexpected validation errors propagate",
       "tests/architecture/test_quality_workflow.py: PyYAML-parsed actual run step invocations enforce complete Ruff gates after locked dependency installation",
-      "tests/integration/test_default_resources.py retains nine original hashes plus corrected medical quoting provenance; synthetic prompt and validated canonical YAML consumers are exercised."
+      "tests/integration/test_default_resources.py retains nine original hashes plus corrected medical quoting provenance; synthetic prompt and validated canonical YAML consumers are exercised.",
+      "tests/e2e/test_classification_pipeline.py: every actual sender default through the CLI; canonical prompt and legacy proposals; multiple labels, archive precedence, matching conflicts/negatives, invalid proposal fail-before-mutation, exact domain dispatch, fake Gmail/LLM, temporary local state and guarded approved/dry-run modes."
     ],
     "ci_workflow": ".github/workflows/portfolio-architecture.yml installs the Python 3.12 hash lock, runs complete repository Ruff lint/format gates, architecture and the full configured synthetic/governance suite, exercises capability/JSON contracts, and builds wheel/sdist. Configuration is not hosted execution evidence. Issue12 adds archive byte comparison and a resource-focused normal-wheel test from a source-free temporary cwd; this focused check does not substitute for the full installed/copied acceptance profile.",
     "mirror_source": "where pertinent",
@@ -429,7 +435,15 @@
       ],
       "validation": "PyYAML safe_load then checked Draft7Validator; required fields and closed objects; reject empty/whitespace literal alternatives and nonfinite numeric metadata through strict stdlib JSON; no legacy shape guessing",
       "tests": "tests/integration/test_rule_contracts.py; tests/integration/test_rule_value_validation.py; tests/architecture/test_rule_contract_fitness.py",
-      "acceptance": "Source-only checks; exact-commit security/build/installed archives, independent review, real human/security approval and main verification pending"
+      "acceptance": "Source-only checks; exact-commit security/build/installed archives, independent review, real human/security approval and main verification pending",
+      "pipeline": {
+        "adapter": "src.classification.proposal.plan_classification -> ClassificationPlan",
+        "labels": "labels > sub_labels > legacy label; preserve order and deduplicate; reject malformed explicit fields",
+        "archive": "explicit boolean archive > legacy action == archive",
+        "domains": "exact medical/finance taxonomy branches and exact payslip label; legacy category aliases retained; mixed domains each run once",
+        "dry_run": "blocks Gmail/Calendar mutations; existing LLM use and private local case/event persistence remain enabled",
+        "limits": "No full case/event-schema acceptance, extraction-policy execution, insurer eligibility, idempotence, Calendar or submission behavior added."
+      }
     }
   },
   "data": {

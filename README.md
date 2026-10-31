@@ -63,6 +63,8 @@ Notes on the current CLI:
 - `python -m src.main --run cases` reads only local case JSON and does not require Anthropic, Google packages, OAuth credentials, or `ANTHROPIC_API_KEY`.
 - `weekly` and `monthly` use Anthropic client creation after dispatch and require `ANTHROPIC_API_KEY` plus the `anthropic` package.
 - `classify` uses Anthropic and builds a Gmail service; default classify mode requests readonly Gmail scope and plans/audits mutations as dry-run proposals unless explicit approval flags are supplied.
+- Classification consumes all canonical rule `labels` or prompt `sub_labels`, plus the explicit `archive` flag; legacy `label/category/action` outputs remain supported. Medical/finance processing follows taxonomy branches, including payslips. See [rule contracts](docs/rule-contracts.md).
+- Dry-run controls external Gmail/Calendar mutations. Classification can still use the LLM and write local case/event JSON; synthetic tests redirect these paths to temporary directories.
 - The old README commands `python -m src.ingestion.run` and `python -m src.summaries.weekly` do not match tracked modules; use `src.main` modes instead.
 
 ## Repository map

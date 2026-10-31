@@ -35,7 +35,7 @@ and `body` fields:
   first active matching rule in YAML order. `labels`, `classification`, `archive`
   and complete independent `rule` metadata are retained. Compatibility `label`
   is the first proposed label, `category` aliases classification, `action` is
-  `label`. This does not claim the pipeline applied every label or archive flag.
+  `label`. Execution remains separately guarded at the Gmail adapter boundary.
 - `src.finance.event_extractor.classify_finance_email -> FinanceDecision | None`:
   all sender-domain patterns precede subject-keyword patterns; ties follow YAML
   order. `account` explicitly aliases `account_source`; `category` is the declared
@@ -60,6 +60,41 @@ heuristic. `subject_keyword` inspects subject only; medical `keyword` inspects
 subject and body, excluding sender display text. Keywords are casefolded literal
 substrings; `|` separates literal alternatives, not arbitrary regex syntax.
 Confidence is heuristic metadata, not calibrated probability or coverage proof.
+
+## CLI proposal consumption
+
+`src.classification.proposal.plan_classification(result: Mapping[str, Any])
+-> ClassificationPlan` is a pure typed composition adapter. Label precedence is
+sender `labels`, bundled-prompt `sub_labels`, then legacy `label` (defaulting to
+`BC/misc/unclassified` only when no label field exists). It retains label order,
+deduplicates exact duplicates, and rejects empty/non-list arrays or blank/non-string
+items before Gmail mutations. Explicit `archive` must be a bool and takes precedence
+over legacy `action == "archive"`; malformed proposals raise rather than silently
+falling back. The original classifier result and its rule metadata are not changed.
+
+`run_classify` plans/applies every label and the declared archive flag through the
+existing MutationGuard adapters. Medical processing follows the exact
+`BC/Records/Medical` branch; finance follows `BC/Records/Finance` and the exact
+`BC/Records/Career/Payslip` label. A branch matches itself or children separated by
+`/`, never lookalike prefixes. `Records` alone does not identify a domain. Legacy
+`category` values medical/reimbursement and finance/banking/investment still select
+their old processing paths. A message with both medical and finance labels runs
+each local path once. Finance's canonical classification proposal is passed into
+the existing event builder; no missing event category is invented from event_type.
+
+Dry-run retains its existing boundary: it prevents Gmail/Calendar mutations,
+requests readonly Gmail scope, and records redacted proposals. It can still call
+the LLM and persist local case/event JSON under `~/.bureaucracy_copilot/`.
+This change makes previously missed canonical domains reach that existing behavior;
+it does not introduce a no-LLM/no-local-write mode. Tests use synthetic Gmail and
+LLM fakes and temporary local-state/audit paths only. Case/event schema completeness,
+extraction-policy execution, insurer eligibility, and idempotent local processing
+remain separate limitations. No Calendar, submission or new provider action is added.
+
+`python -m pytest -q tests/e2e/test_classification_pipeline.py` exercises every
+actual sender default, matching priority, negative senders, multiple labels,
+canonical prompt and legacy outputs, archive precedence, invalid proposals,
+domain dispatch and approved/dry-run adapter paths without provider access.
 
 A deterministic source-only demonstration (no network or persistence):
 

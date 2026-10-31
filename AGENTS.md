@@ -134,3 +134,12 @@ Rule loading and direct matching reject empty or whitespace-only literal OR
 alternatives; rule documents reject nonfinite numbers before proposals are built.
 Source tests do not certify exact installed artifacts, human/security approval,
 whole medical/financial schemas, or resulting main.
+
+`src.classification.proposal.plan_classification` adapts canonical sender `labels`,
+prompt `sub_labels`, and legacy `label/category/action` results. The CLI consumes
+every label and explicit archive bool through MutationGuard; medical/finance
+taxonomy branches and payslips select the existing local processing paths.
+`python -m pytest -q tests/e2e/test_classification_pipeline.py` exercises all real
+sender defaults, canonical/legacy outputs and guarded execution with synthetic
+Gmail/LLM fakes. Dry-run blocks external mutations, not LLM use or local JSON
+persistence; tests must redirect case/event/audit state to temporary paths.
