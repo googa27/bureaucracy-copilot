@@ -134,3 +134,15 @@ No new dependency or custom installer is needed. CI compares wheel/sdist bytes w
 `scripts/check_distribution_resources.py`, then exercises normally installed
 resource consumers from a temporary directory. This focused CI check complements
 the separately required full installed/copied acceptance profile.
+
+## Locked authentication dependency security patch
+
+The Python 3.12 lock pins existing transitive dependency `pyasn1` to 0.6.5.
+The 2026-10-31 dependency audit found four availability advisories in 0.6.4
+(CVE-2026-119194, CVE-2026-119195, CVE-2026-119196, CVE-2026-119197).
+[Upstream 0.6.5](https://github.com/pyasn1/pyasn1/releases/tag/v0.6.5) supplies
+the decoder fixes; [official PyPI metadata](https://pypi.org/project/pyasn1/0.6.5/)
+records BSD-2-Clause licensing and Python >=3.8 support. Only this package and its
+two published artifact hashes change in the lock. Application APIs, dependency
+boundaries and default resources are unchanged; audit and runtime verification
+must still be recorded per candidate rather than assumed from the version pin.
