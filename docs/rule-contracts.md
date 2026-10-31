@@ -14,6 +14,14 @@ and medical `insurers/triggers` shapes are refused, not implicitly migrated.
 PyYAML `safe_load` handles syntax/standard tags; existing direct dependency
 jsonschema's `Draft7Validator.check_schema` and `validate` enforce the declared
 shape. Closed objects reject typos, required fields reject incomplete inputs.
+Literal `|` alternatives must each contain a non-whitespace character. Empty,
+leading/trailing empty, and whitespace-only alternatives raise `ValidationError`
+at loading and direct `matches` calls; no alternatives are silently removed.
+Nonempty alternatives retain their existing literal spaces and casefold matching.
+After shape validation, stdlib `json.dumps(..., allow_nan=False)` rejects all
+nonfinite numeric metadata with `ValidationError`, including YAML `.nan` values
+that do not satisfy ordinary comparison semantics. Finite confidence endpoints
+0 and 1 and interior values remain valid and unchanged.
 YAML, schema, I/O and unexpected failures propagate; no fallback catches hide them.
 No dependencies were added. Schema definitions live in `src.utils.rule_contracts`
 so normal wheels need no checkout-relative schema paths; architecture fitness
@@ -69,7 +77,7 @@ assert propose_route({"subject": "isapre y seguro complementario"})["route"] == 
 assert propose_route({})["route"] == "unknown"
 ```
 
-Run `python -m pytest -q tests/integration/test_rule_contracts.py
+Run `python -m pytest -q tests/integration/test_rule_contracts.py tests/integration/test_rule_value_validation.py
  tests/architecture/test_rule_contract_fitness.py` (one command line).
 Tests cover all actual default rules and shape refusal with synthetic inputs.
 These classifications are not full `financial_event` or `medical_case` schema
@@ -85,3 +93,7 @@ handles parsing rather than shape validation;
 provides checked supported validators. Public domain semantics were checked against
 sender/financial schemas, data-model, label-taxonomy, PRD, README and actual defaults.
 No FPF/PDP imports or data transfers are involved.
+
+The strict numeric boundary follows the maintained standard-library
+[JSON encoder contract](https://docs.python.org/3.12/library/json.html#json.dump).
+Canonical defaults and their pinned byte hashes are unchanged by these checks.

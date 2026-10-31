@@ -130,5 +130,7 @@ consumers with the declared rule shapes. All nine original hashes remain in
 hash and a reversible original-byte witness. The five prompts and three other
 YAML defaults remain byte identical. See [rule contracts](docs/rule-contracts.md)
 for typed proposal APIs, matching policy, metadata retention and limits.
+Rule loading and direct matching reject empty or whitespace-only literal OR
+alternatives; rule documents reject nonfinite numbers before proposals are built.
 Source tests do not certify exact installed artifacts, human/security approval,
 whole medical/financial schemas, or resulting main.

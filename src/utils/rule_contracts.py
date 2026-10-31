@@ -1,11 +1,12 @@
 """Strict, pure YAML rule loading and matching; no provider or persistence access."""
 
+import json
 from collections.abc import Mapping
 from email.utils import parseaddr
 from typing import Any, Protocol, TypedDict
 
 import yaml
-from jsonschema import Draft7Validator
+from jsonschema import Draft7Validator, ValidationError
 
 
 class TextResource(Protocol):
@@ -358,7 +359,36 @@ def load_rule_document(resource: TextResource, kind: str) -> dict[str, Any]:
     Draft7Validator.check_schema(schema)
     document = yaml.safe_load(resource.read_text(encoding="utf-8"))
     Draft7Validator(schema).validate(document)
+    if kind == "gmail_sender_rules":
+        patterns = (rule["pattern"] for rule in document["rules"])
+    elif kind == "finance_classification":
+        patterns = (
+            value
+            for rule in document["classification_rules"]
+            for pattern in rule["patterns"]
+            for value in pattern.values()
+        )
+    elif kind == "medical_routes":
+        patterns = (rule["pattern"] for rule in document["routes"])
+    else:
+        patterns = ()
+    for pattern in patterns:
+        _literal_alternatives(pattern)
+    # YAML admits NaN, which does not obey JSON Schema's comparison bounds.
+    # Strict JSON serialization refuses every nonfinite numeric value without
+    # changing valid values or the canonical default payloads.
+    try:
+        json.dumps(document, allow_nan=False)
+    except ValueError as exc:
+        raise ValidationError("Rule documents must contain finite JSON numbers") from exc
     return document
+
+
+def _literal_alternatives(pattern: str) -> list[str]:
+    alternatives = pattern.casefold().split("|")
+    if any(not part.strip() for part in alternatives):
+        raise ValidationError("Rule patterns require nonempty literal alternatives")
+    return alternatives
 
 
 def mailbox(sender: str) -> tuple[str, str]:
@@ -373,9 +403,9 @@ def matches(kind: str, pattern: str, email: Mapping[str, str]) -> bool:
     Subject keywords inspect subject only; medical keywords inspect subject/body.
     Subdomains must be explicitly listed. Display names never prove a domain.
     """
+    alternatives = _literal_alternatives(pattern)
     name, address = mailbox(email.get("from", ""))
     domain = address.rsplit("@", 1)[1] if address.count("@") == 1 else ""
-    alternatives = pattern.casefold().split("|")
     if kind in ("domain", "sender_domain"):
         return bool(domain) and domain in alternatives
     if kind == "email":
