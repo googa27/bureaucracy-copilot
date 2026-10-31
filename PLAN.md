@@ -8,8 +8,8 @@
 - [ ] Add PLAN.md
 - [ ] Add all docs/ files
 - [ ] Add schemas/
-- [ ] Add rules/
-- [ ] Add prompts/
+- [ ] Add src/utils/assets/rules/
+- [ ] Add src/utils/assets/prompts/
 
 ### 1.2 Gmail label taxonomy
 - Define top-level label structure
@@ -147,7 +147,7 @@ Python 3.11+
 
 ### AI/LLM layer
 - Claude API (Anthropic) for classification and summarization
-- Prompt templates in `prompts/` directory
+- Prompt templates in `src/utils/assets/prompts/` directory
 
 ### Future
 - Google Drive API for document storage
@@ -169,14 +169,14 @@ Python 3.11+
 9. schemas/financial_event.schema.json
 10. schemas/reminder.schema.json
 11. schemas/sender_rule.schema.json
-12. rules/gmail_sender_rules.yaml
-13. rules/medical_routes.yaml
-14. rules/finance_classification.yaml
-15. rules/summary_rules.yaml
-16. prompts/classify_email.md
-17. prompts/summarize_weekly_hygiene.md
-18. prompts/summarize_finance_monthly.md
-19. prompts/build_claim_case.md
-20. prompts/draft_followup.md
+12. src/utils/assets/rules/gmail_sender_rules.yaml
+13. src/utils/assets/rules/medical_routes.yaml
+14. src/utils/assets/rules/finance_classification.yaml
+15. src/utils/assets/rules/summary_rules.yaml
+16. src/utils/assets/prompts/classify_email.md
+17. src/utils/assets/prompts/summarize_weekly_hygiene.md
+18. src/utils/assets/prompts/summarize_finance_monthly.md
+19. src/utils/assets/prompts/build_claim_case.md
+20. src/utils/assets/prompts/draft_followup.md
 21. src/ placeholder files
 22. notebooks/ placeholder files

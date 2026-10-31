@@ -1,12 +1,15 @@
 """
 monthly_finance_summary.py -- Generate monthly finance digest from financial events.
 """
+
 import json
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "summarize_finance_monthly.md"
+from src.utils.resources import default_resource
+
+PROMPT_PATH = default_resource("prompts/summarize_finance_monthly.md")
 
 
 def aggregate_monthly_events(events: list[dict]) -> dict:
@@ -46,7 +49,7 @@ def aggregate_monthly_events(events: list[dict]) -> dict:
 
 def generate_monthly_summary(month: str, aggregated: dict, client: Any) -> str:
     """Use Claude to generate a readable monthly finance digest."""
-    prompt = PROMPT_PATH.read_text()
+    prompt = PROMPT_PATH.read_text(encoding="utf-8")
     user_message = f"Month: {month}\n\n" + json.dumps(aggregated, indent=2, ensure_ascii=False)
 
     message = client.messages.create(
@@ -58,7 +61,7 @@ def generate_monthly_summary(month: str, aggregated: dict, client: Any) -> str:
     return message.content[0].text.strip()
 
 
-def save_monthly_summary(summary: str, month: str, output_dir: Optional[Path] = None) -> Path:
+def save_monthly_summary(summary: str, month: str, output_dir: Path | None = None) -> Path:
     """Save a generated monthly summary to disk."""
     if output_dir is None:
         output_dir = Path("~/.bureaucracy_copilot/summaries").expanduser()

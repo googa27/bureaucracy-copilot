@@ -44,7 +44,7 @@ The system is a layered AI operations pipeline built on top of Gmail and Google 
 ### 2. Classification Layer (`src/classification/`)
 
 - Applies sender rules (YAML-defined)
-- Calls LLM classifier (Claude API) with `prompts/classify_email.md`
+- Calls LLM classifier (Claude API) with `src/utils/assets/prompts/classify_email.md`
 - Assigns primary class: Action / Pipeline / Records / Waiting / Feeds
 - Assigns sub-labels from taxonomy
 - Applies Gmail labels and archives as appropriate
@@ -77,7 +77,7 @@ The system is a layered AI operations pipeline built on top of Gmail and Google 
 - Generates weekly hygiene summary email
 - Generates reimbursement queue summary
 - Generates monthly finance digest
-- Uses `prompts/summarize_weekly_hygiene.md` and `prompts/summarize_finance_monthly.md`
+- Uses `src/utils/assets/prompts/summarize_weekly_hygiene.md` and `src/utils/assets/prompts/summarize_finance_monthly.md`
 
 ### 7. Outputs Layer (`src/outputs/`)
 

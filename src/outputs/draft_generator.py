@@ -1,20 +1,20 @@
 """
 draft_generator.py -- Draft follow-up emails for pending reimbursement cases.
 """
+
 from __future__ import annotations
 
 import base64
 import json
 from email.mime.text import MIMEText
-from pathlib import Path
-from typing import Optional
 
 import anthropic
 
 from src.governance.executor import MutationGuard
 from src.governance.types import MutationProposal, MutationResult
+from src.utils.resources import default_resource
 
-PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "draft_followup.md"
+PROMPT_PATH = default_resource("prompts/draft_followup.md")
 GMAIL_COMPOSE_SCOPE = "https://www.googleapis.com/auth/gmail.compose"
 
 
@@ -38,7 +38,7 @@ def draft_followup_email(
     language: str = "es",
 ) -> dict:
     """Use Claude to draft a follow-up email for a reimbursement case."""
-    prompt = PROMPT_PATH.read_text()
+    prompt = PROMPT_PATH.read_text(encoding="utf-8")
     context = build_followup_context(case)
     user_message = f"Language: {language}\n\n{context}"
 
@@ -53,7 +53,7 @@ def draft_followup_email(
 
     try:
         return json.loads(response)
-    except Exception:
+    except json.JSONDecodeError:
         return {
             "subject": "Seguimiento reembolso",
             "body": response,
@@ -65,7 +65,7 @@ def draft_followup_email(
 def create_gmail_draft(
     service,
     draft_data: dict,
-    thread_id: Optional[str] = None,
+    thread_id: str | None = None,
     *,
     guard: MutationGuard,
 ) -> MutationResult:

@@ -1,12 +1,12 @@
 """
 logger.py -- Structured logging for Bureaucracy Copilot.
 """
+
 import json
 import logging
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 
 class JsonFormatter(logging.Formatter):
@@ -14,7 +14,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         entry = {
-            "ts": datetime.utcnow().isoformat(),
+            "ts": datetime.now(UTC).replace(tzinfo=None).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "msg": record.getMessage(),
@@ -24,7 +24,7 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(entry, ensure_ascii=False)
 
 
-def get_logger(name: str, log_file: Optional[Path] = None) -> logging.Logger:
+def get_logger(name: str, log_file: Path | None = None) -> logging.Logger:
     """Return a configured logger that writes JSON to stderr (and optionally a file)."""
     logger = logging.getLogger(name)
     if logger.handlers:

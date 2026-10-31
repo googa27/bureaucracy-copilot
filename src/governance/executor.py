@@ -1,4 +1,5 @@
 """Controlled execution wrappers for Gmail/Calendar side effects."""
+
 from __future__ import annotations
 
 from collections.abc import Callable

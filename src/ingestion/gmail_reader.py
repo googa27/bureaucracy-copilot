@@ -1,6 +1,7 @@
 """
 gmail_reader.py — Fetch and normalize Gmail messages via the Gmail API.
 """
+
 from __future__ import annotations
 
 import base64
@@ -24,19 +25,24 @@ def build_service(credentials: Credentials):
 def list_messages(service, query: str = "", max_results: int = 100) -> list[dict]:
     """List Gmail messages matching a query."""
     messages = []
-    response = service.users().messages().list(
-        userId="me", q=query, maxResults=max_results
-    ).execute()
+    response = (
+        service.users().messages().list(userId="me", q=query, maxResults=max_results).execute()
+    )
 
     messages.extend(response.get("messages", []))
 
     while "nextPageToken" in response and len(messages) < max_results:
-        response = service.users().messages().list(
-            userId="me",
-            q=query,
-            maxResults=max_results,
-            pageToken=response["nextPageToken"],
-        ).execute()
+        response = (
+            service.users()
+            .messages()
+            .list(
+                userId="me",
+                q=query,
+                maxResults=max_results,
+                pageToken=response["nextPageToken"],
+            )
+            .execute()
+        )
         messages.extend(response.get("messages", []))
 
     return messages[:max_results]
@@ -44,9 +50,7 @@ def list_messages(service, query: str = "", max_results: int = 100) -> list[dict
 
 def get_message(service, message_id: str) -> dict:
     """Fetch a full message by ID."""
-    return service.users().messages().get(
-        userId="me", id=message_id, format="full"
-    ).execute()
+    return service.users().messages().get(userId="me", id=message_id, format="full").execute()
 
 
 def parse_message(raw: dict) -> dict:
@@ -99,14 +103,19 @@ def get_or_create_label(service, name: str, *, guard: MutationGuard) -> str | No
     )
 
     def create_label() -> dict:
-        return service.users().labels().create(
-            userId="me",
-            body={
-                "name": name,
-                "labelListVisibility": "labelShow",
-                "messageListVisibility": "show",
-            },
-        ).execute()
+        return (
+            service.users()
+            .labels()
+            .create(
+                userId="me",
+                body={
+                    "name": name,
+                    "labelListVisibility": "labelShow",
+                    "messageListVisibility": "show",
+                },
+            )
+            .execute()
+        )
 
     result = guard.execute(proposal, create_label)
     return result.applied_reference if result.status == "applied" else None
@@ -137,11 +146,16 @@ def apply_label(
     )
     return guard.execute(
         proposal,
-        lambda: service.users().messages().modify(
-            userId="me",
-            id=message_id,
-            body={"addLabelIds": label_ids},
-        ).execute(),
+        lambda: (
+            service.users()
+            .messages()
+            .modify(
+                userId="me",
+                id=message_id,
+                body={"addLabelIds": label_ids},
+            )
+            .execute()
+        ),
     )
 
 
@@ -163,9 +177,14 @@ def archive_message(
     )
     return guard.execute(
         proposal,
-        lambda: service.users().messages().modify(
-            userId="me",
-            id=message_id,
-            body={"removeLabelIds": ["INBOX"]},
-        ).execute(),
+        lambda: (
+            service.users()
+            .messages()
+            .modify(
+                userId="me",
+                id=message_id,
+                body={"removeLabelIds": ["INBOX"]},
+            )
+            .execute()
+        ),
     )

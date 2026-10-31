@@ -20,3 +20,30 @@ jobs:
           python-version: '3.12'
       - name: Validate portfolio architecture contract
         run: python scripts/check_portfolio_architecture.py
+      - name: Install hash-locked Python 3.12 research profile
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r requirements-impact.lock
+          python -m pip install --no-deps --no-build-isolation -e .
+      - name: Check complete repository lint
+        run: python -m ruff check .
+      - name: Check complete repository formatting
+        run: python -m ruff format --check .
+      - name: Report causal-impact dependency versions
+        run: python -c "import numpy, pandas, statsmodels; print(f'numpy={numpy.__version__} pandas={pandas.__version__} statsmodels={statsmodels.__version__}')"
+      - name: Run all configured synthetic and governance tests
+        run: python -m pytest -q
+      - name: Exercise synthetic capability and JSON contracts
+        run: |
+          python -m examples.impact_evaluation.reminder_impact --capabilities
+          python -m examples.impact_evaluation.reminder_impact --format json
+      - name: Build wheel and source distribution from locked tooling
+        run: python -m build --no-isolation
+      - name: Verify wheel and sdist default payload bytes
+        run: python scripts/check_distribution_resources.py dist/*.whl dist/*.tar.gz
+      - name: Exercise normally installed defaults outside the checkout
+        run: |
+          python -m pip install --no-deps --force-reinstall dist/*.whl
+          resource_test_dir="$(mktemp -d)"
+          cp tests/integration/test_default_resources.py "$resource_test_dir/"
+          cd "$resource_test_dir"
+          python -m pytest -q test_default_resources.py

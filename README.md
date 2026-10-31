@@ -13,13 +13,14 @@ Implemented or scaffolded in this repo:
 - CLI entry point in `src/main.py` with `classify`, `weekly`, `monthly`, and `cases` modes.
 - Local JSON persistence under `~/.bureaucracy_copilot/` for case, event, and summary artifacts.
 - Draft-first and human-review framing for actions that affect email, calendar, insurers, or other third parties.
+- Public-synthetic reminder impact evaluation using an RCT benchmark, DiD, propensity weighting, SQL preparation, diagnostics, and an explicit parallel-trends failure case.
 
 Not proven here:
 
 - No public benchmark dataset or accuracy report.
 - No verified money-recovered, time-saved, reimbursement-success, or medical/financial outcome claim.
 - No automated insurer submission flow.
-- No meaningful test suite yet; `tests/` currently contains only `.gitkeep`.
+- No live Gmail/Calendar/LLM accuracy benchmark; current tests cover governance/import boundaries plus the optional public-synthetic causal-impact example.
 
 ## Workflow and capability map
 
@@ -80,8 +81,8 @@ bureaucracy-copilot/
 │   ├── privacy-and-risk.md
 │   ├── summaries.md
 │   └── assets/
-├── prompts/                 # LLM prompt templates
-├── rules/                   # YAML classification and routing rules
+├── examples/
+│   └── impact_evaluation/   # Public-synthetic RCT/DiD/propensity/SQL case study
 ├── schemas/                 # JSON Schema contracts
 ├── src/
 │   ├── calendar/            # Calendar reminder scaffolding
@@ -92,6 +93,9 @@ bureaucracy-copilot/
 │   ├── outputs/             # Draft/output helpers
 │   ├── summaries/           # Weekly/monthly summary helpers
 │   └── utils/               # Config/logging
+│       └── assets/         # Bundled read-only defaults
+│           ├── prompts/    # Five LLM prompt templates
+│           └── rules/      # Four YAML rule payloads
 ├── notebooks/               # Exploratory notebooks
 └── tests/                   # Unit governance/import-boundary tests plus architecture gates
 ```
@@ -120,13 +124,14 @@ Safety posture:
 | Area | Status | Evidence | Caveat |
 |---|---|---|---|
 | Product docs | Defined | `PRD.md`, `PLAN.md`, `docs/` | Product language is aspirational; README reflects current MVP truth. |
-| Label taxonomy | Defined | `docs/label-taxonomy.md`, `rules/gmail_sender_rules.yaml` | Needs live mailbox validation. |
+| Label taxonomy | Defined | `docs/label-taxonomy.md`, `src/utils/assets/rules/gmail_sender_rules.yaml` | Needs live mailbox validation. |
 | Schemas | Defined | `schemas/*.schema.json`, `docs/data-model.md` | Schema validation is not wired through a test suite yet. |
 | Gmail classification | Scaffolded | `src/main.py`, `src/ingestion/`, `src/classification/` | Requires OAuth, Anthropic key, and careful review. |
 | Medical case tracking | Scaffolded | `src/medical/case_tracker.py` | Not medical advice; no submission automation or reimbursement guarantee. |
 | Finance event extraction | Scaffolded | `src/finance/event_extractor.py` | Not financial advice; no accuracy metrics. |
-| Summaries | Scaffolded | `src/summaries/`, `prompts/` | LLM summaries need review before action. |
+| Summaries | Scaffolded | `src/summaries/`, `src/utils/assets/prompts/` | LLM summaries need review before action. |
 | Calendar reminders | Designed/scaffolded | `docs/calendar-automation.md`, `src/calendar/` | Do not include sensitive details in public or shared calendar text. |
+| Causal impact example | Implemented | `examples/impact_evaluation/`, `tests/integration/test_impact_evaluation.py` | Public-synthetic interview-sized artifact; not evidence of production impact. |
 | Tests | Initial coverage | `tests/unit/test_governance_controls.py`, `tests/unit/test_cli_import_boundaries.py`, `tests/architecture/` | Covers governance controls, dry-run mutation/audit behavior, local `cases` CLI import boundary, and architecture gates; no live Gmail/Calendar/LLM validation or accuracy benchmark. |
 
 ## Documentation
@@ -138,7 +143,20 @@ Safety posture:
 - [Calendar automation](docs/calendar-automation.md)
 - [Summaries](docs/summaries.md)
 - [Privacy and risk](docs/privacy-and-risk.md)
+- [Reminder impact evaluation](examples/impact_evaluation/README.md)
 
 ## License
 
 Private / personal-use repository. No open-source license is provided, so redistribution or reuse is not granted by default.
+
+## Issue #10: synthetic impact contract
+
+The public-synthetic example preserves raw fitted propensity support separately from bounded ordinary ATT weighting scores and reports clipping count/fraction. Weighted DiD uncertainty is conditional on supplied weights, without first-stage adjustment; coverage is unvalidated. See [example API and limits](examples/impact_evaluation/README.md).
+
+```bash
+python -m examples.impact_evaluation.reminder_impact --capabilities
+python -m examples.impact_evaluation.reminder_impact --format json
+python -m pytest -q tests/integration/test_impact_evaluation.py tests/integration/test_impact_evaluation_controls.py tests/e2e/test_impact_cli.py
+```
+
+These CPU-only commands use generated public-synthetic user-period data (days; seed 7; 6400 rows per design; 12000-row panel cap). No provider access is involved. Python 3.12/Linux x86_64 is the hash-locked configured gate. PR #9 and issues #10/#11 track execution evidence and remaining acceptance; configuration alone is not proof.
